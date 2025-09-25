@@ -1,6 +1,6 @@
 // lib/zip.ts
 // Empaqueta un array de ConvertedImage en un ZIP usando JSZip (en el frontend).
-// Requiere instalar `jszip` (y opcionalmente `@types/jszip` para soporte TS):
+// Requiere instalar `jszip` (y `@types/jszip` para soporte TS (Opcional)):
 // npm i jszip
 // npm i -D @types/jszip
 //

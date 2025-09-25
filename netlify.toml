@@ -1,0 +1,17 @@
+# netlify.toml
+[build]
+  command   = "next build"
+  publish   = ".next"
+  # Directorios que Netlify debe guardar como caché entre builds
+  cache     = [".next/cache", "node_modules"]
+
+# Opcional: configurar variables de entorno para producción
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Opcional: redirecciones típicas para Next.js
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

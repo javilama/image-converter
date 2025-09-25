@@ -29,7 +29,12 @@ export default function Toolbar({
         <select
           data-testid="format-select"
           value={targetFormat}
-          onChange={(e) => onChangeFormat(e.target.value as any)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+            const val = e.target.value;
+            if (val === "webp" || val === "png" || val === "jpg") {
+              onChangeFormat(val);
+            }
+          }}
           className="bg-white/15 rounded px-3 py-1 text-xs md:text-base"
           disabled={isConvertingAll}
         >

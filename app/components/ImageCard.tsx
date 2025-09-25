@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { ConvertedImage, fileToDataUrl } from "../lib/convert";
 import "../globals.css";
 
@@ -64,6 +65,7 @@ export default function ImageCard({
             src={preview}
             alt={file.name}
             className="max-h-full max-w-full object-contain"
+            loading="lazy"
           />
         ) : (
           <div>Preview...</div>
