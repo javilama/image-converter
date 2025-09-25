@@ -2,6 +2,7 @@
 
 import { ConvertedImage } from "../lib/convert";
 import { zipFiles } from "../lib/zip";
+import "../globals.css";
 
 type Props = {
   converted: ConvertedImage[];
@@ -63,7 +64,7 @@ export default function BulkActions({ converted, setConverted, clearAllFiles }: 
         disabled={converted.length === 0}
         className="px-4 py-2 font-light rounded-lg bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base"
       >
-        Descargar todas (zip)
+        Descargar todo (zip)
       </button>
 
       <button

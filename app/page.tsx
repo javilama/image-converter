@@ -100,7 +100,6 @@ export default function Home() {
       <h1 className="text-3xl font-semibold mb-4" data-testid="title">
         Convertidor de imágenes
       </h1>
-
       <Toolbar
         targetFormat={targetFormat}
         onChangeFormat={setTargetFormat}

@@ -108,7 +108,7 @@ export default function ImageCard({
             download={converted.filename}
             className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 font-medium cursor-pointer scale-100 hover:scale-105 transition-all"
           >
-            Descargar
+            Descargar { converted.filename.split('.').pop()?.toUpperCase()}
           </a>
         )}
 

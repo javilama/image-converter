@@ -4,6 +4,9 @@
 
   --king-blue: #050f3d;
   --dark-night: #000000;
+  --foreground: #ededed;
+  --custom-purple: #7e5bef;
+
 }
 
 @theme inline {
@@ -11,6 +14,7 @@
   --color-foreground: var(--foreground); */
   --color-king-blue: var(--king-blue);
   --color-dark-night: var(--dark-night);
+  --color-custom-purple: var(--custom-purple);
 }
 
 @media (prefers-color-scheme: dark) {
