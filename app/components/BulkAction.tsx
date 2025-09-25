@@ -76,7 +76,7 @@ export default function BulkActions({
   };
 
   // Utility: classes condicionales para soportar vertical/horizontal sin duplicar markup.
-  const containerClass = `flex ${vertical ? "flex-col items-stretch" : "flex-row items-center"} gap-3`;
+  const containerClass = `flex ${vertical ? "flex-col items-stretch" : "flex-row items-center"} gap-4`;
   const buttonBase =
     "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
   const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;

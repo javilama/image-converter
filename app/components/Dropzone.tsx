@@ -29,28 +29,43 @@ export default function Dropzone({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // helper: extraer Files desde DataTransfer o Input
-  const extractFiles = useCallback((items: DataTransferItemList | FileList | null): File[] => {
-    if (!items) return [];
-    const results: File[] = [];
-    if ("length" in items) {
-      // FileList or DataTransferItemList
-      for (let i = 0; i < items.length; i++) {
-        const it = (items as any)[i];
-        // if DataTransferItemList, getAsFile may exist
-        if (it && typeof it.getAsFile === "function") {
-          const f = it.getAsFile();
+  /**
+   * helper: extraer Files desde DataTransferItemList o FileList (sin usar `any`)
+   */
+  const extractFiles = useCallback(
+    (items: DataTransferItemList | FileList | null): File[] => {
+      if (!items) return [];
+
+      // Si es un FileList (p. ej. input.files), simplemente convertir a array
+      if (
+        typeof (items as FileList).item === "function" &&
+        (items as FileList) instanceof FileList
+      ) {
+        return Array.from(items as FileList);
+      }
+
+      const results: File[] = [];
+      const dtItems = items as DataTransferItemList;
+
+      for (let i = 0; i < dtItems.length; i++) {
+        const it = dtItems[i];
+        if (!it) continue;
+
+        if (typeof (it as DataTransferItem).getAsFile === "function") {
+          const f = (it as DataTransferItem).getAsFile();
           if (f) results.push(f);
-        } else if (it instanceof File) {
-          results.push(it);
-        } else if (it && it.kind === "file" && it.getAsFile) {
-          const f = it.getAsFile();
-          if (f) results.push(f);
+          continue;
+        }
+
+        if ((it as unknown) instanceof File) {
+          results.push(it as unknown as File);
         }
       }
-    }
-    return results;
-  }, []);
+
+      return results;
+    },
+    []
+  );
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -58,7 +73,9 @@ export default function Dropzone({
       e.stopPropagation();
       setIsDragging(false);
       const dt = e.dataTransfer;
-      const newFiles = extractFiles(dt.items.length ? dt.items : dt.files);
+      const newFiles = extractFiles(
+        dt.items && dt.items.length ? dt.items : dt.files
+      );
       if (newFiles.length) onFilesAdded(newFiles);
     },
     [onFilesAdded, extractFiles]
@@ -91,16 +108,31 @@ export default function Dropzone({
   }, []);
 
   const buttonBase =
-    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 w-full disabled:cursor-not-allowed`;
+    "px-3 py-2 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 w-xs disabled:cursor-not-allowed`;
 
   return (
     <div>
       {/* Drop area */}
       <div
-        className={`w-full md:h-[100vh] rounded-lg border-2  p-6 transition-colors ${
-          isDragging ? "border-dashed border-blue-400 bg-white/5" : "border-dashed border-white/10 bg-transparent"
+        className={`w-full md:h-[100vh] rounded-lg border-2 p-6 transition-colors ${
+          isDragging
+            ? "border-dashed border-blue-400 bg-white/5"
+            : "border-dashed border-white/10 bg-transparent"
         }`}
+        // sólo abrir el picker si el click fue directamente sobre la zona (no sobre hijos)
+        onClick={(e) => {
+          if (e.target === e.currentTarget && files.length === 0) {
+            // Si no hay archivos, el input está visible y sirve para seleccionar,
+            // pero si quieres que el click sobre la zona abra el picker también cuando input está visible:
+            openFilePicker();
+          } else if (e.target === e.currentTarget && files.length > 0) {
+            // Si ya hay archivos y queremos que click en área abra el picker (botón visible),
+            // puedes permitirlo también aquí. Actualmente mantengo comportamiento que solo
+            // abre picker por botón cuando hay archivos (seguridad UX).
+            // openFilePicker();
+          }
+        }}
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragEnter={onDragOver}
@@ -115,36 +147,47 @@ export default function Dropzone({
         aria-label="Area para arrastrar o seleccionar imágenes"
         data-testid="dropzone-root"
       >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          multiple
-          className="hidden"
-          onChange={onInputChange}
-          data-testid="dropzone-input"
-        />
-
-        {/* Placeholder / instrucciones */}
-        <div className="flex items-center  justify-between gap-4 ">
-          <div className="flex-1">
-            <h2 className="text-lg font-medium">Arrastra y suelta tus imágenes aquí</h2>
-            <p className="text-sm text-gray-300">
-               o haz click para seleccionar (PNG/JPG).
-            </p>
+        {/* INPUT: visible cuando NO hay archivos; oculto después de cargar al menos 1 */}
+        {files.length === 0 ? (
+          <div className="mb-4">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              // No 'hidden' aquí: el input es visible hasta que se cargue al menos 1 imagen
+              className=" file:hidden text-transparent focus:outline-none"
+              onChange={onInputChange}
+              data-testid="dropzone-input"
+            />
           </div>
-
-          <div>
+        ) : (
+          // BOTÓN: visible cuando ya hay al menos 1 archivo; oculto antes
+          <div className="mb-4 flex justify-end order-2">
             <button
               type="button"
               onClick={openFilePicker}
               className={btnPrimary}
               data-testid="dropzone-btn"
             >
-              Seleccionar archivos
+              Seleccionar más archivos
             </button>
           </div>
-        </div>
+        )}
+
+        {/* Placeholder / instrucciones cuando no se muestran cards */}
+        {files.length === 0 && (
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="text-lg font-medium">
+                Arrastra y suelta tus imágenes aquí
+              </h2>
+              <p className="text-sm text-gray-300 mt-2">
+                o haz click para seleccionar (PNG/JPG/WEBP)
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Si hay archivos, mostramos las ImageCard dentro del dropzone */}
         {files && files.length > 0 ? (
@@ -155,8 +198,13 @@ export default function Dropzone({
                 <ImageCard
                   key={file.name + file.size}
                   file={file}
-                  converted={converted.find((c) => c.srcFile.name + c.srcFile.size === file.name + file.size)}
-                  onConvert={() => Promise.resolve(onConvert ? onConvert(file) : undefined)}
+                  converted={converted.find(
+                    (c) =>
+                      c.srcFile.name + c.srcFile.size === file.name + file.size
+                  )}
+                  onConvert={() =>
+                    Promise.resolve(onConvert ? onConvert(file) : undefined)
+                  }
                   onRemove={() => onRemove && onRemove(file)}
                   globalConverting={globalConverting}
                   data-testid={`dropzone-image-card-${file.name}`}

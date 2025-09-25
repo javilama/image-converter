@@ -22,14 +22,14 @@ export default function Toolbar({
 }: Props) {
 
    const buttonBase =
-    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 w-full disabled:cursor-not-allowed`;
+    "px-3 py-1 rounded-full backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20 w-full ";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
   return (
     <div
       className="flex items-center justify-between mb-4 gap-3 "
       data-testid="toolbar-root"
     >
-      <div className="flex flex-col gap-3 items-center w-full ">
+      <div className="flex flex-col gap-5 items-center w-full ">
         <label className="text-sm md:text-xl">Formato de salida:</label>
         
 
@@ -45,7 +45,7 @@ export default function Toolbar({
 
 
 
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 w-[100%]">
         {/* Mostrar progreso y spinner cuando isConvertingAll es true */}
         {isConvertingAll ? (
           <div

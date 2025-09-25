@@ -101,8 +101,9 @@ export default function CustomSelect(props: Props) {
           {options.map((opt) => (
             <li
               role="option"
-              id={opt.value}
+              id={`option-${opt.value}`}
               key={opt.value}
+              aria-selected={targetFormat === opt.value}
               onClick={() => handleSelect(opt.value)}
               className={`px-3 py-2 hover:bg-white/20 cursor-pointer ${
                 targetFormat === opt.value ? "bg-white/20 font-semibold" : ""

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { ConvertedImage, fileToDataUrl } from "../lib/convert";
 import "../globals.css";
 
@@ -88,10 +87,9 @@ export default function ImageCard({
   };
 
   const buttonBase =
-    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30  disabled:cursor-not-allowed`;
+    "px-3 py-1 flex items-center rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30  disabled:cursor-not-allowed gap-2`;
   const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;
-  const btnWarning = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-500/30 disabled:cursor-not-allowed`;
   const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
 
   return (
@@ -122,7 +120,7 @@ export default function ImageCard({
         {/* 
           FIX: prevenir que eventos del input burbujen al Dropzone padre 
           (onKeyDown, onClick, onFocus) -> stopPropagation.
-          Además: normalizar el nombre cuando el usuario sale del input (onBlur).
+          Normalizar el nombre cuando el usuario sale del input (onBlur).
         */}
         <input
           type="text"
