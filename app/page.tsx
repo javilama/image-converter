@@ -96,55 +96,75 @@ export default function Home() {
   }, [converted]);
 
   return (
-    <main className="container mx-auto mt-20 mb-20 p-6">
-      <h1 className="text-3xl font-semibold mb-4" data-testid="title">
-        Convertidor de imágenes
-      </h1>
-      <Toolbar
-        targetFormat={targetFormat}
-        onChangeFormat={setTargetFormat}
-        onConvertAll={handleConvertAll}
-        hasFiles={files.length > 0}
-        // nuevos props para mostrar estado y progreso
-        isConvertingAll={isConvertingAll}
-        convertProgress={convertProgress}
-        data-testid="toolbar"
-      />
-     <div className=" flex justify-end  mt-8 mb-4 ">
-        <BulkActions
-          converted={converted}
-          setConverted={setConverted}
-          data-testid="bulk-actions"
-          clearAllFiles={handleClearAllFiles}
-        />
-      </div>
-      <Dropzone onFilesAdded={handleAddFiles} data-testid="dropzone" />
+    <main className="container mx-auto pt-10 pb-10">
+      <div className="flex flex-col justify-center items-center md:flex-row  gap-6">
+        {/* Contenido principal (izquierda) */}
+        <div className="flex-1">
+          <h1
+            className="text-3xl font-semibold mb-4 text-center md:text-left"
+            data-testid="title"
+          >
+            Convertidor de imágenes
+          </h1>
 
-      <section className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {files.map((file) => (
-          <ImageCard
-            key={file.name + file.size}
-            file={file}
-            converted={converted.find(
-              (c) => c.srcFile.name + c.srcFile.size === file.name + file.size
-            )}
-            // PASO EXACTO: pasar la función que devuelve Promise (ImageCard hace await)
-            onConvert={() => handleConvertFile(file)}
-            onRemove={() => handleRemoveFile(file)}
-            // deshabilitar conversiones individuales si se está convirtiendo todo
+          <Dropzone
+            files={files}
+            converted={converted}
+            onFilesAdded={handleAddFiles}
+            onConvert={(file) => handleConvertFile(file)}
+            onRemove={(file) => handleRemoveFile(file)}
             globalConverting={isConvertingAll}
-            data-testid={`image-card-${file.name}`}
+            data-testid="dropzone"
           />
-        ))}
-      </section>
 
-      <div className="mt-8">
-        <BulkActions
-          converted={converted}
-          setConverted={setConverted}
-          data-testid="bulk-actions"
-          clearAllFiles={handleClearAllFiles}
-        />
+          <section className="mt-6  hidden md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {files.map((file) => (
+              <ImageCard
+                key={file.name + file.size}
+                file={file}
+                converted={converted.find(
+                  (c) =>
+                    c.srcFile.name + c.srcFile.size === file.name + file.size
+                )}
+                // PASO EXACTO: pasar la función que devuelve Promise (ImageCard hace await)
+                onConvert={() => handleConvertFile(file)}
+                onRemove={() => handleRemoveFile(file)}
+                // deshabilitar conversiones individuales si se está convirtiendo todo
+                globalConverting={isConvertingAll}
+                data-testid={`image-card-${file.name}`}
+              />
+            ))}
+          </section>
+        </div>
+
+        {/* Sidebar derecho: Toolbar + acciones verticales */}
+        <aside className="w-72 shrink-0">
+          {/* Wrapper para dar fondo / padding al sidebar */}
+          <div className="sticky top-24 p-5 rounded-lg bg-white/5 border border-white/6">
+            {/* Injecto el Toolbar (no lo modifico) */}
+            <Toolbar
+              targetFormat={targetFormat}
+              onChangeFormat={setTargetFormat}
+              onConvertAll={handleConvertAll}
+              hasFiles={files.length > 0}
+              isConvertingAll={isConvertingAll}
+              convertProgress={convertProgress}
+              data-testid="toolbar"
+            />
+
+            {/* Espacio entre toolbar y otras acciones */}
+            <div className="mt-4">
+              {/* BulkActions en vertical dentro del sidebar para acciones rápidas */}
+              <BulkActions
+                converted={converted}
+                setConverted={setConverted}
+                data-testid="bulk-actions-sidebar"
+                clearAllFiles={handleClearAllFiles}
+                vertical={true} // <-- aquí lo apilamos verticalmente
+              />
+            </div>
+          </div>
+        </aside>
       </div>
     </main>
   );

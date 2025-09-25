@@ -29,9 +29,15 @@ export default function RootLayout({
   return (
     <html lang="en" className="{poppins.className}">
       <body
-        className= {`min-h-screen bg-gradient-to-br from-dark-night to-king-blue text-white ${poppins.variable}`} 
+        className= {`relative bg-gradient-to-br from-king-blue via-black to-king-blue min-h-screen  ${poppins.variable}`} 
       >
-        {children}
+         <div className="absolute inset-0 bg-white/3 backdrop-blur-md"></div>
+          <div className="relative z-10">
+
+            {children}
+
+          </div>
+        
       </body>
     </html>
   );

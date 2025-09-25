@@ -1,4 +1,5 @@
-'use client';
+// app/components/BulkAction.tsx
+"use client";
 
 import { ConvertedImage } from "../lib/convert";
 import { zipFiles } from "../lib/zip";
@@ -10,6 +11,9 @@ type Props = {
   setConverted: (arr: ConvertedImage[]) => void;
   // nuevo prop para limpiar también los archivos originales
   clearAllFiles: () => void;
+  // Si true: apila los botones en columna (vertical). Si false/omitido: fila (horizontal).
+  // Esto permite reutilizar el componente en diferentes layouts sin tocar markup.
+  vertical?: boolean;
 };
 
 /**
@@ -19,8 +23,20 @@ type Props = {
  * - Descargar todas las imágenes convertidas en un ZIP.
  * - Limpiar solo las conversiones (liberar object URLs).
  * - Eliminar todo: archivos cargados y conversiones (reinicio completo).
+ *
+ * Nota: el layout (horizontal/vertical) se controla con la prop `vertical`.
  */
-export default function BulkActions({ converted, setConverted, clearAllFiles }: Props) {
+
+
+
+
+
+export default function BulkActions({
+  converted,
+  setConverted,
+  clearAllFiles,
+  vertical = false,
+}: Props) {
   // Descargar todas las imágenes empaquetadas en un ZIP
   const handleDownloadAll = async () => {
     if (!converted.length) return;
@@ -36,6 +52,7 @@ export default function BulkActions({ converted, setConverted, clearAllFiles }: 
       a.remove();
       URL.revokeObjectURL(url);
 
+      // Liberar object URLs de cada conversión ya que descargamos todo
       converted.forEach((c) => {
         try {
           URL.revokeObjectURL(c.url);
@@ -48,21 +65,36 @@ export default function BulkActions({ converted, setConverted, clearAllFiles }: 
 
   // Limpiar solo las conversiones
   const handleClearAll = () => {
+    // liberar object URLs asociados a las conversiones
     converted.forEach((c) => {
       try {
         URL.revokeObjectURL(c.url);
       } catch {}
     });
+    // reiniciar estado de converted
     setConverted([]);
   };
 
+  // Utility: classes condicionales para soportar vertical/horizontal sin duplicar markup.
+  const containerClass = `flex ${vertical ? "flex-col items-stretch" : "flex-row items-center"} gap-3`;
+  const buttonBase =
+    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
+  const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;
+  const btnWarning = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-500/30 disabled:cursor-not-allowed`;
+  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
+ 
+
+  // Cuando se muestran verticalmente, queremos que los botones ocupen todo el ancho para una UX consistente.
+  const fullWidthIfVertical = vertical ? "w-full" : "";
+
   return (
-    <div className="flex gap-3" data-testid="bulk-actions-root">
+    <div className={containerClass} data-testid="bulk-actions-root" role="group" aria-label="Bulk actions">
       <button
         data-testid="download-all-btn"
         onClick={handleDownloadAll}
         disabled={converted.length === 0}
-        className="px-4 py-2 font-light rounded-lg bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base"
+        className={`${btnSuccess} ${fullWidthIfVertical}`}
+        aria-disabled={converted.length === 0}
       >
         Descargar todo (zip)
       </button>
@@ -71,7 +103,8 @@ export default function BulkActions({ converted, setConverted, clearAllFiles }: 
         data-testid="clear-all-btn"
         onClick={handleClearAll}
         disabled={converted.length === 0}
-        className="px-4 py-2 font-medium rounded-lg bg-[#ff4545] hover:bg-[#ff0f0f]disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base"
+        className={`${btnWarning} ${fullWidthIfVertical}`}
+        aria-disabled={converted.length === 0}
       >
         Limpiar conversiones
       </button>
@@ -79,7 +112,7 @@ export default function BulkActions({ converted, setConverted, clearAllFiles }: 
       <button
         data-testid="remove-all-btn"
         onClick={clearAllFiles}
-        className="px-4 py-2 font-medium rounded-lg bg-[#ff0f0f] hover:bg-red-700 cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base"
+        className={`${btnDanger} ${fullWidthIfVertical}`}
         title="Eliminar todos los archivos y conversiones"
       >
         Limpiar todo

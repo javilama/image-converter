@@ -67,14 +67,25 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
+ * dataUrlToBlob
+ * Helper: convierte un dataURL en un Blob.
+ * Sirve como fallback si canvas.toBlob devuelve null en ciertos navegadores/formatos.
+ */
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const res = await fetch(dataUrl);
+  return await res.blob();
+}
+
+/**
  * convertFileTo
- * Convierte un File (PNG/JPEG) a target ('webp'|'png'|'jpg') usando canvas.
+ * Convierte un File (PNG/JPEG/WEBP) a target ('webp'|'png'|'jpg') usando canvas.
  * Opciones:
  *  - quality: número 0..1 (aplica a webp/jpg)
  *
  * NOTAS:
  *  - Mantiene las dimensiones originales para preservar calidad.
  *  - Usa canvas.toBlob para obtener un Blob eficiente.
+ *  - Si toBlob falla, se hace fallback a toDataURL -> Blob.
  *  - Devuelve un objeto ConvertedImage con object URL listo para descargar/mostrar.
  */
 export async function convertFileTo(
@@ -82,9 +93,9 @@ export async function convertFileTo(
   target: 'webp' | 'png' | 'jpg',
   options?: { quality?: number }
 ): Promise<ConvertedImage> {
-  // Validar tipo básico
-  if (!/^image\/(png|jpeg|jpg)$/i.test(file.type)) {
-    throw new Error('Tipo de archivo no soportado. Solo PNG/JPEG admitidos.');
+  // Validar tipo básico (acepta ahora png, jpeg/jpg y webp)
+  if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
+    throw new Error('Tipo de archivo no soportado. Solo PNG/JPEG/WEBP admitidos.');
   }
 
   // 1) leer a dataURL
@@ -108,14 +119,24 @@ export async function convertFileTo(
   let mime = 'image/webp';
   if (target === 'png') mime = 'image/png';
   if (target === 'jpg') mime = 'image/jpeg';
-  const quality = typeof options?.quality === 'number' ? Math.max(0, Math.min(1, options!.quality)) : 0.9;
+  const quality = typeof options?.quality === 'number'
+    ? Math.max(0, Math.min(1, options.quality))
+    : 0.9;
 
   // 5) obtener blob desde canvas
-  const blob: Blob | null = await new Promise((resolve) => {
-    // toBlob tiene la firma callback((blob) => ...)
-    // Algunos navegadores ignoran quality para PNG; that's ok.
-    canvas.toBlob((b) => resolve(b), mime, quality);
+  let blob: Blob | null = await new Promise((resolve) => {
+    try {
+      canvas.toBlob((b) => resolve(b), mime, quality);
+    } catch {
+      resolve(null);
+    }
   });
+
+  // fallback a toDataURL si toBlob devuelve null
+  if (!blob) {
+    const fallbackDataUrl = canvas.toDataURL(mime, quality);
+    blob = await dataUrlToBlob(fallbackDataUrl);
+  }
 
   if (!blob) throw new Error('No se pudo generar el blob del canvas');
 

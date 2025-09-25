@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import CustomSelect from "./CustomSelect";
 
 type Props = {
   targetFormat: "webp" | "png" | "jpg";
@@ -19,38 +20,32 @@ export default function Toolbar({
   isConvertingAll = false,
   convertProgress = { current: 0, total: 0 },
 }: Props) {
+
+   const buttonBase =
+    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 w-full disabled:cursor-not-allowed`;
   return (
     <div
-      className="flex items-center justify-between mb-4 gap-3"
+      className="flex items-center justify-between mb-4 gap-3 "
       data-testid="toolbar-root"
     >
-      <div className="flex gap-3 items-center">
+      <div className="flex flex-col gap-3 items-center w-full ">
         <label className="text-sm md:text-xl">Formato de salida:</label>
-        <select
-          data-testid="format-select"
-          value={targetFormat}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-            const val = e.target.value;
-            if (val === "webp" || val === "png" || val === "jpg") {
-              onChangeFormat(val);
-            }
-          }}
-          className="bg-white/15 rounded px-3 py-1 text-xs md:text-base"
-          disabled={isConvertingAll}
-        >
-          <option className="text-[#000000] text-xs md:text-base" value="webp">
-            WEBP (recomendado)
-          </option>
-          <option className="text-[#000000] text-xs md:text-base" value="png">
-            PNG
-          </option>
-          <option className="text-[#000000] text-xs md:text-base" value="jpg">
-            JPG
-          </option>
-        </select>
-      </div>
+        
 
-      <div className="flex items-center gap-3">
+        <CustomSelect 
+         targetFormat={targetFormat}
+          onChangeFormat={onChangeFormat}
+          isConvertingAll={isConvertingAll}
+          className="w-full" // controla ancho desde Toolbar si quieres
+          data-testid="format-select"
+        
+        
+        />
+
+
+
+        <div className="flex flex-col items-center gap-3">
         {/* Mostrar progreso y spinner cuando isConvertingAll es true */}
         {isConvertingAll ? (
           <div
@@ -64,15 +59,20 @@ export default function Toolbar({
           </div>
         ) : null}
 
+        
+
         <button
           data-testid="convert-all-btn"
           onClick={onConvertAll}
           disabled={!hasFiles || isConvertingAll}
-          className="px-4 py-2 rounded-lg md:rounded-full bg-[#07bc77]/60 disabled:opacity-60 cursor-pointer font-light text-xs md:text-xl scale-100 hover:scale-105 transition-all"
+          className={btnPrimary}
         >
           {isConvertingAll ? "Convirtiendo todo..." : "Convertir todo"}
         </button>
       </div>
+      </div>
+
+      
     </div>
   );
 }

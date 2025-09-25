@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
+
+
+
 :root {
 
   --king-blue: #050f3d;
   --dark-night: #000000;
-  --foreground: #ededed;
+  --electric:#1a2e88;
   --custom-purple: #7e5bef;
 
 }
 
 @theme inline {
-  /* --color-background: var(--background);
-  --color-foreground: var(--foreground); */
+  
   --color-king-blue: var(--king-blue);
   --color-dark-night: var(--dark-night);
   --color-custom-purple: var(--custom-purple);
@@ -24,7 +26,7 @@
   }
 }
 
-body {
+html,body {
  
   color: var(--foreground);
   font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
@@ -32,3 +34,5 @@ body {
   margin: 0;
   padding: 0;
 }
+
+

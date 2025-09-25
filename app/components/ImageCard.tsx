@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -14,6 +14,28 @@ type Props = {
   globalConverting?: boolean;
 };
 
+/**
+ * 🔹 Utilidad para sanitizar el nombre (eliminar espacios/caracteres raros, normalizar acentos)
+ *
+ * - Quita la extensión si el usuario por error la incluye.
+ * - Normaliza diacríticos (NFKD) y elimina marcas.
+ * - Mantiene letras, números, guiones y underscores.
+ * - Reemplaza espacios por guiones y devuelve en minúsculas.
+ * - Retorna 'archivo' si el resultado queda vacío.
+ */
+function sanitizeFilename(name: string): string {
+  if (!name) return "archivo";
+  // 1) quitar extensión si existe
+  const withoutExt = name.replace(/\.[^.]+$/, "");
+  // 2) normalizar diacríticos (NFKD) y eliminar marcas
+  const normalized = withoutExt.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  // 3) eliminar caracteres no deseados, permitir letras, números, guiones, underscores y espacios
+  const cleaned = normalized.replace(/[^\w\s-]/g, "").trim();
+  // 4) reemplazar espacios por guiones y pasar a minúsculas
+  const slug = cleaned.replace(/\s+/g, "-").toLowerCase();
+  return slug || "archivo";
+}
+
 export default function ImageCard({
   file,
   converted,
@@ -22,8 +44,10 @@ export default function ImageCard({
   globalConverting = false,
 }: Props) {
   const [preview, setPreview] = useState<string>("");
-  // estado local para indicar que esta tarjeta está convirtiendo
   const [isConverting, setIsConverting] = useState<boolean>(false);
+
+  // nuevo: estado para nombre personalizado
+  const [customName, setCustomName] = useState<string>("");
 
   useEffect(() => {
     let alive = true;
@@ -36,29 +60,46 @@ export default function ImageCard({
   }, [file]);
 
   /**
-   * Loading:
-   * - envolvemos la llamada a `onConvert()` con setIsConverting(true/false)
-   * - usamos await onConvert() porque onConvert retorna una Promise desde el padre
+   * Maneja conversión con loading controlado
    */
   const handleConvertClick = async () => {
     try {
       setIsConverting(true);
-      // await la conversión que hace el padre
-      await onConvert();
+      await onConvert(); // ejecuta conversión en el padre
     } catch (err) {
-      // manejar error opcionalmente
-      console.error('Error en conversión:', err);
+      console.error("Error en conversión:", err);
     } finally {
       setIsConverting(false);
     }
   };
 
+  /**
+   * 🔹 Construcción segura del nombre final:
+   * - Usa customName si está definido y no vacío (normalizado).
+   * - Si está vacío → usa el nombre base original (sin extensión) normalizado.
+   */
+  const getDownloadFilename = (): string => {
+    const fallbackBase = sanitizeFilename(file.name.replace(/\.[^.]+$/, ""));
+    // siempre normalizamos el customName en el momento de crear el filename (doble seguridad)
+    const safeCustom = customName ? sanitizeFilename(customName) : "";
+    const safeName = safeCustom || fallbackBase;
+    const ext = converted?.filename.split(".").pop() || "png";
+    return `${safeName}.${ext}`;
+  };
+
+  const buttonBase =
+    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30  disabled:cursor-not-allowed`;
+  const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;
+  const btnWarning = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-500/30 disabled:cursor-not-allowed`;
+  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
 
   return (
     <article
-      className="bg-white/5 rounded p-4 flex flex-col "
+      className="bg-white/5 rounded-lg p-4 flex flex-col"
       data-testid={`card-${file.name}`}
-     >
+    >
+      {/* Vista previa */}
       <div className="h-48 flex items-center justify-center bg-black/20 rounded">
         {preview ? (
           <img
@@ -72,30 +113,68 @@ export default function ImageCard({
         )}
       </div>
 
+      {/* Información + campo de nombre */}
       <div className="mt-3 flex-1">
-        <p className="font-medium truncate" title={file.name}>
-          {file.name}
-        </p>
-        <p className="text-sm text-gray-300">
+        <p className="text-sm text-gray-300 mb-2">
           {Math.round(file.size / 1024)} KB
         </p>
+
+        {/* 
+          FIX: prevenir que eventos del input burbujen al Dropzone padre 
+          (onKeyDown, onClick, onFocus) -> stopPropagation.
+          Además: normalizar el nombre cuando el usuario sale del input (onBlur).
+        */}
+        <input
+          type="text"
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          onBlur={(e) => {
+            // normalizar al perder foco para retroalimentación inmediata
+            const normalized = sanitizeFilename(e.target.value);
+            setCustomName(normalized);
+          }}
+          placeholder={file.name.replace(/\.[^.]+$/, "")}
+          className="w-full px-2 py-1 rounded-lg bg-black/30 border border-gray-600 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 "
+          onKeyDown={(e) => {
+            // evitar que teclas como Space/Enter burbujen y activen el Dropzone
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            // evitar que el click abra el file picker en el padre
+            e.stopPropagation();
+          }}
+          onFocus={(e) => {
+            // evitar que el foco en el input provoque handlers en el padre
+            e.stopPropagation();
+          }}
+          onPaste={(e) => {
+            // prevenir paste brusco y normalizar al pegar (dejar que se inserte y normalizar en onBlur)
+            e.stopPropagation();
+          }}
+          onDrop={(e) => {
+            // prevenir drop dentro del input que también puede burbujar
+            e.stopPropagation();
+          }}
+        />
       </div>
 
+      {/* Acciones */}
       <div className="mt-3 flex gap-4 items-center">
-        {/* Botón convertir: deshabilitado mientras isConverting */}
+        {/* Botón convertir */}
         <button
           data-testid={`convert-btn-${file.name}`}
-          className="px-3 py-1 rounded-lg bg-[#C356D7] hover:bg-[#7B2C87] fond-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 scale-100 hover:scale-105 transition-all"
-          onClick={handleConvertClick || globalConverting}
-          disabled={isConverting}
+          className={btnPrimary}
+          onClick={handleConvertClick}
+          disabled={isConverting || globalConverting}
           aria-busy={isConverting}
-          aria-label={isConverting ? 'Convirtiendo imagen' : 'Convertir imagen'}
+          aria-label={isConverting ? "Convirtiendo imagen" : "Convertir imagen"}
         >
-          {/* Spinner pequeño con Tailwind (sitio exacto del spinner) */}
           {isConverting ? (
             <>
-              {/* data-testid para testear el loading */}
-              <span data-testid={`convert-loading-${file.name}`} className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin" />
+              <span
+                data-testid={`convert-loading-${file.name}`}
+                className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin"
+              />
               <span>Convirtiendo...</span>
             </>
           ) : (
@@ -103,22 +182,24 @@ export default function ImageCard({
           )}
         </button>
 
+        {/* Botón descargar si está convertido */}
         {converted && (
           <a
             data-testid={`download-btn-${file.name}`}
             href={converted.url}
-            download={converted.filename}
-            className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 font-medium cursor-pointer scale-100 hover:scale-105 transition-all"
+            // Usamos el nombre normalizado (getDownloadFilename) para la descarga
+            download={getDownloadFilename()}
+            className={btnSuccess}
           >
-            Descargar { converted.filename.split('.').pop()?.toUpperCase()}
+            Descargar {converted.filename.split(".").pop()?.toUpperCase()}
           </a>
         )}
 
+        {/* Botón eliminar */}
         <button
           data-testid={`remove-btn-${file.name}`}
-          className="px-3 py-1 rounded-lg bg-[#ff0f0f] hover:bg-red-700 ml-auto font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed scale-100 hover:scale-105 transition-all"
+          className={btnDanger}
           onClick={onRemove}
-          // opcional: deshabilitar eliminar mientras convierte
           disabled={isConverting}
         >
           Eliminar
