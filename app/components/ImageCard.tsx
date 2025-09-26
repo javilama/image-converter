@@ -21,10 +21,10 @@ type Props = {
  * - Normaliza diacríticos (NFKD) y elimina marcas.
  * - Mantiene letras, números, guiones y underscores.
  * - Reemplaza espacios por guiones y devuelve en minúsculas.
- * - Retorna 'archivo' si el resultado queda vacío.
+ * - Retorna 'image-file' si el resultado queda vacío.
  */
 function sanitizeFilename(name: string): string {
-  if (!name) return "archivo";
+  if (!name) return "image-file";
   // 1) quitar extensión si existe
   const withoutExt = name.replace(/\.[^.]+$/, "");
   // 2) normalizar diacríticos (NFKD) y eliminar marcas
@@ -33,7 +33,7 @@ function sanitizeFilename(name: string): string {
   const cleaned = normalized.replace(/[^\w\s-]/g, "").trim();
   // 4) reemplazar espacios por guiones y pasar a minúsculas
   const slug = cleaned.replace(/\s+/g, "-").toLowerCase();
-  return slug || "archivo";
+  return slug || "image-file";
 }
 
 export default function ImageCard({
