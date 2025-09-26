@@ -97,7 +97,7 @@ export default function Home() {
 
   return (
     <main className="container mx-auto pt-10 pb-10">
-      <div className="flex flex-col justify-center items-center md:flex-row  gap-6">
+      <div className="flex flex-col justify-center items-start md:flex-row  gap-6">
         {/* Contenido principal (izquierda) */}
         <div className="flex-1">
           <h1
@@ -138,9 +138,9 @@ export default function Home() {
         </div>
 
         {/* Sidebar derecho: Toolbar + acciones verticales */}
-        <aside className="w-72 shrink-0">
+        <aside className="w-75 shrink-0 mt-30 sticky top-24 h-fit">
           {/* Wrapper para dar fondo / padding al sidebar */}
-          <div className="sticky top-24 p-5 rounded-lg bg-white/5 border border-white/6">
+          <div className=" p-5 rounded-lg bg-white/5 border border-white/6">
             {/* Injecto el Toolbar (no lo modifico) */}
             <Toolbar
               targetFormat={targetFormat}

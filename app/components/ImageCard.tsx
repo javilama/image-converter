@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ConvertedImage, fileToDataUrl } from "../lib/convert";
+import LoadingSpinner from "./LoadingSpinner";
 import "../globals.css";
 
 type Props = {
@@ -107,7 +108,7 @@ export default function ImageCard({
             loading="lazy"
           />
         ) : (
-          <div>Preview...</div>
+          <LoadingSpinner size="md" label="Cargando vista previa..." />
         )}
       </div>
 
