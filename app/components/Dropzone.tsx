@@ -74,7 +74,9 @@ export default function Dropzone({
       e.stopPropagation();
       setIsDragging(false);
       const dt = e.dataTransfer;
-      const newFiles = extractFiles(dt.items && dt.items.length ? dt.items : dt.files);
+      const newFiles = extractFiles(
+        dt.items && dt.items.length ? dt.items : dt.files
+      );
       if (newFiles.length) onFilesAdded(newFiles);
     },
     [onFilesAdded, extractFiles]
@@ -116,7 +118,9 @@ export default function Dropzone({
       {/* Drop area */}
       <div
         className={`w-full min-h-screen rounded-lg border-2 p-6 transition-colors ${
-          isDragging ? "border-dashed border-blue-400 bg-white/5" : "border-dashed border-white/10 bg-transparent"
+          isDragging
+            ? "border-dashed border-blue-400 bg-white/5"
+            : "border-dashed border-white/10 bg-transparent"
         }`}
         // solo abrir el picker si el click fue directamente sobre la zona (no sobre hijos)
         onClick={(e) => {
@@ -172,8 +176,12 @@ export default function Dropzone({
               data-testid="dropzone-cta"
             >
               <div className="flex-1 text-left">
-                <h2 className="text-lg font-medium">Arrastra y suelta tus imágenes aquí</h2>
-                <p className="text-sm text-gray-300 mt-2">Haz click o presiona Enter para seleccionar (PNG/JPG/WEBP)</p>
+                <h2 className="text-lg font-medium">
+                  Arrastra y suelta tus imágenes aquí
+                </h2>
+                <p className="text-sm text-gray-300 mt-2">
+                  Haz click o presiona Enter para seleccionar (PNG/JPG/WEBP)
+                </p>
               </div>
 
               {/* <div className="px-3 py-2 rounded bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-sm">
@@ -197,14 +205,25 @@ export default function Dropzone({
         {/* Si hay archivos, mostramos las ImageCard dentro del dropzone */}
         {files && files.length > 0 ? (
           <div className="mt-4">
-            <h3 className="text-sm mb-2">Archivos añadidos:</h3>
+            <h3 className="text-xs mb-2">
+              Ingresa un nombre para tu imagen (opcional).
+              <br />
+              Al salir del campo, se ajustará automáticamente eliminando
+              caracteres no válidos y reemplazando espacios por guiones.
+            </h3>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {files.map((file) => (
                 <ImageCard
                   key={file.name + file.size}
                   file={file}
-                  converted={converted.find((c) => c.srcFile.name + c.srcFile.size === file.name + file.size)}
-                  onConvert={() => Promise.resolve(onConvert ? onConvert(file) : undefined)}
+                  converted={converted.find(
+                    (c) =>
+                      c.srcFile.name + c.srcFile.size === file.name + file.size
+                  )}
+                  onConvert={() =>
+                    Promise.resolve(onConvert ? onConvert(file) : undefined)
+                  }
                   onRemove={() => onRemove && onRemove(file)}
                   globalConverting={globalConverting}
                   data-testid={`dropzone-image-card-${file.name}`}

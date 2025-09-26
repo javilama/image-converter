@@ -8,32 +8,23 @@ import "../globals.css";
 type Props = {
   file: File;
   converted?: ConvertedImage;
-  // onConvert ahora devuelve una Promise para que el card pueda await
   onConvert: () => Promise<void>;
   onRemove: () => void;
   globalConverting?: boolean;
 };
 
 /**
- * 🔹 Utilidad para sanitizar el nombre (eliminar espacios/caracteres raros, normalizar acentos)
- *
- * - Quita la extensión si el usuario por error la incluye.
- * - Normaliza diacríticos (NFKD) y elimina marcas.
- * - Mantiene letras, números, guiones y underscores.
- * - Reemplaza espacios por guiones y devuelve en minúsculas.
- * - Retorna 'image-file' si el resultado queda vacío.
+ * 🔹 Sanitiza y normaliza nombres de archivo
+ * @param name - valor ingresado por el usuario
+ * @param originalName - nombre original del archivo para fallback
  */
-function sanitizeFilename(name: string): string {
-  if (!name) return "image-file";
-  // 1) quitar extensión si existe
-  const withoutExt = name.replace(/\.[^.]+$/, "");
-  // 2) normalizar diacríticos (NFKD) y eliminar marcas
+function sanitizeFilename(name: string, originalName: string): string {
+  const baseName = name && name.trim() !== "" ? name : originalName;
+  const withoutExt = baseName.replace(/\.[^.]+$/, "");
   const normalized = withoutExt.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
-  // 3) eliminar caracteres no deseados, permitir letras, números, guiones, underscores y espacios
   const cleaned = normalized.replace(/[^\w\s-]/g, "").trim();
-  // 4) reemplazar espacios por guiones y pasar a minúsculas
   const slug = cleaned.replace(/\s+/g, "-").toLowerCase();
-  return slug || "image-file";
+  return slug || originalName;
 }
 
 export default function ImageCard({
@@ -46,8 +37,10 @@ export default function ImageCard({
   const [preview, setPreview] = useState<string>("");
   const [isConverting, setIsConverting] = useState<boolean>(false);
 
-  // nuevo: estado para nombre personalizado
-  const [customName, setCustomName] = useState<string>("");
+  // Estado para nombre editable, inicializado con el nombre base sin extensión
+  const [customName, setCustomName] = useState<string>(
+    file.name.replace(/\.[^.]+$/, "")
+  );
 
   useEffect(() => {
     let alive = true;
@@ -59,13 +52,10 @@ export default function ImageCard({
     };
   }, [file]);
 
-  /**
-   * Maneja conversión con loading controlado
-   */
   const handleConvertClick = async () => {
     try {
       setIsConverting(true);
-      await onConvert(); // ejecuta conversión en el padre
+      await onConvert();
     } catch (err) {
       console.error("Error en conversión:", err);
     } finally {
@@ -74,16 +64,18 @@ export default function ImageCard({
   };
 
   /**
-   * 🔹 Construcción segura del nombre final:
-   * - Usa customName si está definido y no vacío (normalizado).
-   * - Si está vacío → usa el nombre base original (sin extensión) normalizado.
+   * Devuelve el nombre de archivo final para la descarga
    */
   const getDownloadFilename = (): string => {
-    const fallbackBase = sanitizeFilename(file.name.replace(/\.[^.]+$/, ""));
-    // siempre normalizamos el customName en el momento de crear el filename (doble seguridad)
-    const safeCustom = customName ? sanitizeFilename(customName) : "";
+    const fallbackBase = sanitizeFilename("", file.name.replace(/\.[^.]+$/, ""));
+    const safeCustom = customName
+      ? sanitizeFilename(customName, file.name).replace(/\.[^.]+$/, "")
+      : fallbackBase;
     const safeName = safeCustom || fallbackBase;
-    const ext = converted?.filename.split(".").pop() || "png";
+    const ext =
+      converted?.filename.split(".").pop() ||
+      file.name.split(".").pop() ||
+      "png";
     return `${safeName}.${ext}`;
   };
 
@@ -118,48 +110,26 @@ export default function ImageCard({
           {Math.round(file.size / 1024)} KB
         </p>
 
-        {/* 
-          FIX: prevenir que eventos del input burbujen al Dropzone padre 
-          (onKeyDown, onClick, onFocus) -> stopPropagation.
-          Normalizar el nombre cuando el usuario sale del input (onBlur).
-        */}
         <input
           type="text"
-          value={customName}
+          value={customName || file.name.replace(/\.[^.]+$/, "")}
           onChange={(e) => setCustomName(e.target.value)}
           onBlur={(e) => {
-            // normalizar al perder foco para retroalimentación inmediata
-            const normalized = sanitizeFilename(e.target.value);
-            setCustomName(normalized);
+            const normalized = sanitizeFilename(e.target.value, file.name);
+            setCustomName(normalized.replace(/\.[^.]+$/, ""));
           }}
           placeholder={file.name.replace(/\.[^.]+$/, "")}
           className="w-full px-2 py-1 rounded-lg bg-black/30 border border-gray-600 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 "
-          onKeyDown={(e) => {
-            // evitar que teclas como Space/Enter burbujen y activen el Dropzone
-            e.stopPropagation();
-          }}
-          onClick={(e) => {
-            // evitar que el click abra el file picker en el padre
-            e.stopPropagation();
-          }}
-          onFocus={(e) => {
-            // evitar que el foco en el input provoque handlers en el padre
-            e.stopPropagation();
-          }}
-          onPaste={(e) => {
-            // prevenir paste brusco y normalizar al pegar (dejar que se inserte y normalizar en onBlur)
-            e.stopPropagation();
-          }}
-          onDrop={(e) => {
-            // prevenir drop dentro del input que también puede burbujar
-            e.stopPropagation();
-          }}
+          onKeyDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
+          onPaste={(e) => e.stopPropagation()}
+          onDrop={(e) => e.stopPropagation()}
         />
       </div>
 
       {/* Acciones */}
       <div className="mt-3 flex gap-4 items-center">
-        {/* Botón convertir */}
         <button
           data-testid={`convert-btn-${file.name}`}
           className={btnPrimary}
@@ -181,12 +151,10 @@ export default function ImageCard({
           )}
         </button>
 
-        {/* Botón descargar si está convertido */}
         {converted && (
           <a
             data-testid={`download-btn-${file.name}`}
             href={converted.url}
-            // Usamos el nombre normalizado (getDownloadFilename) para la descarga
             download={getDownloadFilename()}
             className={btnSuccess}
           >
@@ -194,7 +162,6 @@ export default function ImageCard({
           </a>
         )}
 
-        {/* Botón eliminar */}
         <button
           data-testid={`remove-btn-${file.name}`}
           className={btnDanger}
