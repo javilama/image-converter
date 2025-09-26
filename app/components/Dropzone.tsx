@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { FaArrowUpFromBracket } from "react-icons/fa6";
 import ImageCard from "./ImageCard";
 import type { ConvertedImage } from "../lib/convert";
 
@@ -111,7 +112,8 @@ export default function Dropzone({
 
   const buttonBase =
     "px-3 py-2 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30   w-xs  disabled:cursor-not-allowed`;
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
+  
 
   return (
     <div>
@@ -190,14 +192,16 @@ export default function Dropzone({
             </div>
           </div>
         ) : (
+          // boton cargar mas imagenes
           <div className="mb-4 flex justify-end">
             <button
               type="button"
               onClick={openFilePicker}
               className={btnPrimary}
               data-testid="dropzone-btn"
+              title="Agregar más imágenes"
             >
-              Cargar más imágenes
+              <FaArrowUpFromBracket className="w-5 h-5 text-white/50 hover:text-white/90" />
             </button>
           </div>
         )}

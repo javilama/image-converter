@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ConvertedImage, fileToDataUrl } from "../lib/convert";
+import { FaArrowsRotate,FaArrowDownLong,FaTrashCan } from "react-icons/fa6";
 import LoadingSpinner from "./LoadingSpinner";
 import "../globals.css";
 
@@ -80,14 +81,15 @@ export default function ImageCard({
   };
 
   const buttonBase =
-    "px-3 py-1 flex items-center rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30  disabled:cursor-not-allowed gap-2`;
-  const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;
-  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
+    "px-3 py-2 flex items-center justify-center rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed w-[20%]`;
+  const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed gap-2`;
+  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30 w-[20%]`;
+  const iconBlur = "hover:text-white/90 text-white/50 w-4 h-4";
 
   return (
     <article
-      className="bg-white/5 rounded-lg p-4 flex flex-col"
+      className="bg-white/5 rounded-lg p-5 hidden md:flex md:flex-col"
       data-testid={`card-${file.name}`}
     >
       {/* Vista previa */}
@@ -129,7 +131,7 @@ export default function ImageCard({
       </div>
 
       {/* Acciones */}
-      <div className="mt-3 flex gap-4 items-center">
+      <div className="mt-3 flex gap-4 items-center justify-start">
         <button
           data-testid={`convert-btn-${file.name}`}
           className={btnPrimary}
@@ -137,6 +139,7 @@ export default function ImageCard({
           disabled={isConverting || globalConverting}
           aria-busy={isConverting}
           aria-label={isConverting ? "Convirtiendo imagen" : "Convertir imagen"}
+          title="Convertir"
         >
           {isConverting ? (
             <>
@@ -144,31 +147,37 @@ export default function ImageCard({
                 data-testid={`convert-loading-${file.name}`}
                 className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin"
               />
-              <span>Convirtiendo...</span>
+              <span> </span>
             </>
           ) : (
-            <span>Convertir</span>
+            <span>
+              <FaArrowsRotate className={iconBlur} /> 
+            </span>
           )}
         </button>
-
+        {/* botón de descarga, solo si hay conversión */}
         {converted && (
           <a
             data-testid={`download-btn-${file.name}`}
             href={converted.url}
             download={getDownloadFilename()}
             className={btnSuccess}
+            title="Descargar imagen convertida"
           >
-            Descargar {converted.filename.split(".").pop()?.toUpperCase()}
+            <FaArrowDownLong className={iconBlur} /> 
+            {converted.filename.split(".").pop()?.toUpperCase()}
           </a>
         )}
-
+           {/* botón de eliminar */}
         <button
           data-testid={`remove-btn-${file.name}`}
           className={btnDanger}
           onClick={onRemove}
           disabled={isConverting}
+          title="Eliminar imagen"
         >
-          Eliminar
+         <FaTrashCan className={iconBlur} /> 
+          
         </button>
       </div>
     </article>
