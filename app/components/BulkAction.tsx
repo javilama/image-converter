@@ -108,7 +108,7 @@ export default function BulkActions({
       >
         Limpiar conversiones
       </button>
-
+     
       <button
         data-testid="remove-all-btn"
         onClick={clearAllFiles}
@@ -117,6 +117,9 @@ export default function BulkActions({
       >
         Limpiar todo
       </button>
+      
+      
+
     </div>
   );
 }

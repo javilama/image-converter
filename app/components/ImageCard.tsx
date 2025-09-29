@@ -81,10 +81,10 @@ export default function ImageCard({
   };
 
   const buttonBase =
-    "px-3 py-2 flex items-center justify-center rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed w-[20%]`;
+    "px-3 py-2 flex items-center justify-center backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed w-[20%] rounded-s-lg`;
   const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed gap-2`;
-  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30 w-[20%]`;
+  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30 w-[20%] rounded-e-lg`;
   const iconBlur = "hover:text-white/90 text-white/50 w-4 h-4";
 
   return (
@@ -131,7 +131,7 @@ export default function ImageCard({
       </div>
 
       {/* Acciones */}
-      <div className="mt-3 flex gap-4 items-center justify-start">
+      <div className= "mt-3 flex items-center justify-center" role="group">
         <button
           data-testid={`convert-btn-${file.name}`}
           className={btnPrimary}
