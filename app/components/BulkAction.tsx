@@ -118,7 +118,7 @@ export default function BulkActions({
         Limpiar todo
       </button>
       
-      
+   
 
     </div>
   );

@@ -138,7 +138,7 @@ export default function Home() {
         </div>
 
         {/* Sidebar derecho: Toolbar + acciones verticales */}
-        <aside className="w-75 shrink-0 mt-30 sticky top-24 h-fit">
+        <aside className="w-full md:w-75 shrink-0 mt-30 sticky top-24 h-fit">
           {/* Wrapper para dar fondo / padding al sidebar */}
           <div className=" p-5 rounded-lg bg-white/5 border border-white/6">
             {/* Injecto el Toolbar (no lo modifico) */}

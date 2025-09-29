@@ -89,7 +89,7 @@ export default function ImageCard({
 
   return (
     <article
-      className="bg-white/5 rounded-lg p-5 hidden md:flex md:flex-col"
+      className="bg-white/5 rounded-lg p-5 md:flex md:flex-col"
       data-testid={`card-${file.name}`}
     >
       {/* Vista previa */}
@@ -155,6 +155,10 @@ export default function ImageCard({
             </span>
           )}
         </button>
+
+
+          
+
         {/* botón de descarga, solo si hay conversión */}
         {converted && (
           <a
