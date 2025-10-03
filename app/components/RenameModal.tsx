@@ -2,12 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import { RenameParams } from '../types/RenameParams';
 
-export type RenameParams = {
-  prefix: string;
-  name: string;
-  keyType: "index" | "original" | "counter";
-};
 
 type Props = {
   open: boolean;
@@ -57,7 +53,7 @@ export default function RenameModal({ open, initial = {}, onClose, onApply }: Pr
           placeholder="p.ej. img"
         />
 
-        <label className="text-xs block mb-1">Key que diferencia cada imagen</label>
+        <label className="text-xs block mb-1">Identificador único</label>
         <select
           className="w-full px-2 py-1 rounded bg-black/30 border border-gray-600 mb-4 text-sm text-white"
           value={keyType}

@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useState } from "react";
-import RenameModal, { RenameParams } from "./RenameModal";
+import RenameModal from "./RenameModal";
+import { RenameParams } from '../types/RenameParams';
 
 type Props = {
   disabled?: boolean;
@@ -15,7 +16,7 @@ export default function RenameAllButton({ disabled = false, onApply, compact = f
   const [open, setOpen] = useState(false);
 
   const buttonBase = "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
-  const btnInfo = `${buttonBase} bg-gradient-to-r from-blue-400/30 to-indigo-500/30 disabled:cursor-not-allowed`;
+  const btnInfo = `${buttonBase} bg-gradient-to-r from-blue-400/30 to-indigo-500/30`;
 
   return (
     <>

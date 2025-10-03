@@ -5,13 +5,10 @@ import React from "react";
 import { ConvertedImage } from "../lib/convert";
 import { zipFiles } from "../lib/zip";
 import "../globals.css";
+import { RenameParams } from '../types/RenameParams';
 import RenameAllButton from "./RenameAllButton";
 
-type RenameParams = {
-  prefix: string;
-  name: string;
-  keyType: "index" | "original" | "counter";
-};
+
 
 type Props = {
   converted: ConvertedImage[];
@@ -72,11 +69,19 @@ export default function BulkActions({
 };
 
   const handleRemoveAll = () => {
-    if (!hasFiles && converted.length === 0) return;
+    console.log('handleRemoveAll called', { hasFiles, convertedLength: converted.length });
+    if (!hasFiles && converted.length === 0) {
+      console.log('Botón deshabilitado: no hay archivos ni conversiones');
+      return;
+    }
     const ok = typeof window !== "undefined" ? window.confirm("¿Eliminar todos los archivos y conversiones?.") : true;
-    if (!ok) return;
-    clearAllFiles();
-    setConverted([]);
+    if (!ok) {
+      console.log('El usuario canceló la confirmación');
+      return;
+    }
+    console.log('Limpiando archivos y conversiones...');
+    clearAllFiles(); // Esto limpia archivos y conversiones
+    setConverted([]); // Por redundancia, pero clearAllFiles debería limpiar ambos
   };
 
   const containerClass = `flex ${vertical ? "flex-col items-stretch" : "flex-row items-center"} gap-4`;
@@ -85,7 +90,7 @@ export default function BulkActions({
   const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;
   const btnWarning = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-500/30 disabled:cursor-not-allowed`;
   const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
-  const fullWidthIfVertical = vertical ? "w-full" : "";
+  
   
 
   return (
@@ -118,16 +123,12 @@ export default function BulkActions({
         Limpiar conversiones
       </button>
 
-      {/* Botón que abre modal para renombrar todo.
-          Importante: onApply del RenameAllButton invoca onRenameAllParams?.(params) */}
-     
-
       <button
         data-testid="remove-all-btn"
         onClick={handleRemoveAll}
-        disabled={!hasFiles && converted.length === 0}
+        /* disabled={!hasFiles && converted.length === 0} */
         className={`${btnDanger} `}
-        aria-disabled={!hasFiles && converted.length === 0}
+        /* aria-disabled={!hasFiles && converted.length === 0} */
         title="Eliminar todos los archivos y conversiones"
       >
         Limpiar todo

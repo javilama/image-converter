@@ -7,14 +7,13 @@ import Toolbar from "../app/components/Toolbar";
 import BulkActions from "../app/components/BulkAction";
 import { ConvertedImage } from "../app/lib/convert";
 
-
 export default function Home() {
   const [files, setFiles] = useState<File[]>([]);
   const [converted, setConverted] = useState<ConvertedImage[]>([]);
   const [targetFormat, setTargetFormat] = useState<"webp" | "png" | "jpg">("webp");
 
-  const [isConvertingAll, setIsConvertingAll] = useState<boolean>(false);
-  const [convertProgress, setConvertProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [isConvertingAll, setIsConvertingAll] = useState(false);
+  const [convertProgress, setConvertProgress] = useState({ current: 0, total: 0 });
 
   const [names, setNames] = useState<Record<string, string>>({});
   const getKey = (file: File) => `${file.name}-${file.size}`;
@@ -54,7 +53,7 @@ export default function Home() {
   const handleConvertFile = useCallback(
     async (file: File): Promise<void> => {
       const { convertFileTo } = await import("../app/lib/convert");
-      const result = await convertFileTo(file, targetFormat, { quality: 0.9 });
+      const result: ConvertedImage = await convertFileTo(file, targetFormat, { quality: 0.9 });
 
       const key = getKey(file);
       const controlledBase = names[key] ?? file.name.replace(/\.[^.]+$/, "");
@@ -65,7 +64,7 @@ export default function Home() {
       const adjusted: ConvertedImage = { ...result, filename: newFilename };
 
       setConverted((prev) => {
-        const filtered = prev.filter((c) => `${c.srcFile.name}-${c.srcFile.size}` !== getKey(file));
+        const filtered = prev.filter((c) => `${c.srcFile.name}-${c.srcFile.size}` !== key);
         return [...filtered, adjusted];
       });
     },
@@ -83,7 +82,7 @@ export default function Home() {
 
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
-        const r = await convertFileTo(f, targetFormat, { quality: 0.9 });
+        const r: ConvertedImage = await convertFileTo(f, targetFormat, { quality: 0.9 });
 
         const key = getKey(f);
         const controlledBase = names[key] ?? f.name.replace(/\.[^.]+$/, "");
@@ -133,68 +132,55 @@ export default function Home() {
     setNames((prev) => ({ ...prev, [getKey(file)]: name }));
   }, []);
 
- // Handler en Home: recibe params desde BulkActions -> RenameAllButton -> RenameModal
-const applyRenameAll = useCallback((params: { prefix: string; name: string; keyType: "index" | "original" | "counter"; }) => {
-  const { prefix, name, keyType } = params;
-
-  // construir nuevo map de names basado en files
-  setNames((prev) => {
-    const next: Record<string, string> = {};
-    let counter = Date.now(); // para keyType 'counter' usar timestamp base
-    files.forEach((f, idx) => {
-      const origBase = f.name.replace(/\.[^.]+$/, "");
-      let keySuffix = "";
-
-      if (keyType === "index") {
-        keySuffix = `${idx + 1}`;
-      } else if (keyType === "original") {
-        keySuffix = origBase;
-      } else {
-        // counter
-        keySuffix = `${counter + idx}`; // simple y único
-      }
-
-      // construir base final: prefix + name + '-' + keySuffix (omitir partes vacías inteligentemente)
-      const parts = [];
-      if (prefix && prefix.trim() !== "") parts.push(prefix.trim());
-      if (name && name.trim() !== "") parts.push(name.trim());
-      if (keySuffix && keySuffix.trim() !== "") parts.push(keySuffix.trim());
-      const combined = parts.join("-");
-
-      // sanear
-      const safe = sanitizeFilenameForDownload(combined, origBase);
-      next[getKey(f)] = safe;
+  const applyRenameAll = useCallback((params: { prefix: string; name: string; keyType: "index" | "original" | "counter"; }) => {
+    const { prefix, name, keyType } = params;
+    setNames((prev) => {
+      const next: Record<string, string> = {};
+      const timestamp = Date.now();
+      files.forEach((f, idx) => {
+        const origBase = f.name.replace(/\.[^.]+$/, "");
+        let keySuffix: string;
+        if (keyType === "counter") {
+          keySuffix = `${timestamp + idx}`;
+        } else if (keyType === "original") {
+          keySuffix = origBase;
+        } else {
+          // index
+          keySuffix = `${idx + 1}`;
+        }
+        const parts: string[] = [];
+        if (prefix.trim() !== "") parts.push(prefix.trim());
+        if (name.trim() !== "") parts.push(name.trim());
+        if (keySuffix.trim() !== "") parts.push(keySuffix.trim());
+        const combined = parts.join("-");
+        const safe = sanitizeFilenameForDownload(combined, origBase);
+        next[getKey(f)] = safe;
+      });
+      return next;
     });
-
-    return next;
-  });
-
-  // sincronizar converted filenames inmediatamente para que ZIP y descargas reflejen el cambio
-  setConverted((prev) =>
-    prev.map((c, i) => {
-      const k = getKey(c.srcFile);
-      const base = (names[k] ?? c.srcFile.name.replace(/\.[^.]+$/, "")) || c.srcFile.name.replace(/\.[^.]+$/, "");
-      // preferir new name from setNames: but setNames is async — use previous approach by reading current files map
-      // safer: derive from files array by matching srcFile
-      const fileForThis = files.find((f) => `${f.name}-${f.size}` === `${c.srcFile.name}-${c.srcFile.size}`);
-      const baseFromNames = fileForThis ? ( ( (typeof window !== "undefined") && ( (window as any).__names_cache ) ) ? "" : "" ) : base;
-      // simpler: compute new base same way as in setNames (but we don't have params per-file here) -> fallback to names after setNames completes
-      // To keep it deterministic, recompute using current files order and same params:
-      let idx = files.findIndex((f) => `${f.name}-${f.size}` === `${c.srcFile.name}-${c.srcFile.size}`);
-      if (idx === -1) idx = i;
-      let keySuffix = keyType === "index" ? `${idx + 1}` : keyType === "original" ? c.srcFile.name.replace(/\.[^.]+$/, "") : `${Date.now() + idx}`;
-      const parts = [];
-      if (prefix && prefix.trim() !== "") parts.push(prefix.trim());
-      if (name && name.trim() !== "") parts.push(name.trim());
-      if (keySuffix && keySuffix.trim() !== "") parts.push(keySuffix.trim());
-      const combined = parts.join("-");
-      const safe = sanitizeFilenameForDownload(combined, c.srcFile.name.replace(/\.[^.]+$/, ""));
-      const ext = c.filename.split(".").pop() || targetFormat || "png";
-      return { ...c, filename: `${safe}.${ext}` };
-    })
-  );
-}, [files, getKey, sanitizeFilenameForDownload, setNames, setConverted, targetFormat, names]);
-
+    setConverted((prev) =>
+      prev.map((c, i) => {
+        const k = getKey(c.srcFile);
+        const base = names[k] ?? c.srcFile.name.replace(/\.[^.]+$/, "");
+        let keySuffix: string;
+        if (keyType === "counter") {
+          keySuffix = `${Date.now() + i}`;
+        } else if (keyType === "original") {
+          keySuffix = base;
+        } else {
+          keySuffix = `${i + 1}`;
+        }
+        const parts: string[] = [];
+        if (prefix.trim() !== "") parts.push(prefix.trim());
+        if (name.trim() !== "") parts.push(name.trim());
+        if (keySuffix.trim() !== "") parts.push(keySuffix.trim());
+        const combined = parts.join("-");
+        const safe = sanitizeFilenameForDownload(combined, c.srcFile.name.replace(/\.[^.]+$/, ""));
+        const ext = c.filename.split(".").pop() || targetFormat || "png";
+        return { ...c, filename: `${safe}.${ext}` };
+      })
+    );
+  }, [files, getKey, sanitizeFilenameForDownload, names, targetFormat]);
 
   return (
     <main className="container mx-auto pt-10 pb-10">
@@ -249,13 +235,13 @@ const applyRenameAll = useCallback((params: { prefix: string; name: string; keyT
 
             <div className="mt-4">
               <BulkActions
-               converted={converted}
-                  setConverted={setConverted}
-                  data-testid="bulk-actions-sidebar"
-                  clearAllFiles={handleClearAllFiles}
-                  vertical={true}
-                  hasFiles={files.length > 0}
-                  onRenameAllParams={applyRenameAll}
+                converted={converted}
+                setConverted={setConverted}
+                data-testid="bulk-actions-sidebar"
+                clearAllFiles={handleClearAllFiles}
+                vertical
+                hasFiles={files.length > 0}
+                onRenameAllParams={applyRenameAll}
               />
             </div>
           </div>
