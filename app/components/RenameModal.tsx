@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import { FaArrowsRotate, FaArrowDownLong, FaTrashCan } from "react-icons/fa6";
 
 export type RenameParams = {
   prefix: string;
@@ -65,7 +64,7 @@ export default function RenameModal({ open, initial = {}, onClose, onApply }: Pr
           onChange={(e) => setKeyType(e.target.value as RenameParams["keyType"])}
         >
           <option value="index">Índice (1,2,3...)</option>
-          <option value="original">Nombre original</option>
+          {/* <option value="original">Nombre original</option> */}
           <option value="counter">Contador único</option>
         </select>
 
