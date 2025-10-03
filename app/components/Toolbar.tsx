@@ -1,3 +1,4 @@
+// app/components/Toolbar.tsx
 "use client";
 
 import React from "react";
@@ -20,59 +21,48 @@ export default function Toolbar({
   isConvertingAll = false,
   convertProgress = { current: 0, total: 0 },
 }: Props) {
-
-   const buttonBase =
+  const buttonBase =
     "px-3 py-1 rounded-full backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20 w-full ";
   const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
+
+  const progress = convertProgress ?? { current: 0, total: 0 };
+
   return (
-    <div
-      className="flex items-center justify-between mb-4 gap-3 "
-      data-testid="toolbar-root"
-    >
+    <div className="flex items-center justify-between mb-4 gap-3 " data-testid="toolbar-root">
       <div className="flex flex-col gap-5 items-center w-full ">
         <label className="text-sm md:text-xl">Formato de salida:</label>
-        
 
-        <CustomSelect 
-         targetFormat={targetFormat}
+        <CustomSelect
+          targetFormat={targetFormat}
           onChangeFormat={onChangeFormat}
           isConvertingAll={isConvertingAll}
-          className="w-full" // controla ancho desde Toolbar si quieres
+          className="w-full"
           data-testid="format-select"
-        
-        
         />
 
-
-
         <div className="flex flex-col items-center gap-3 w-[100%]">
-        {/* Mostrar progreso y spinner cuando isConvertingAll es true */}
-        {isConvertingAll ? (
-          <div
-            className="flex items-center gap-2"
-            data-testid="convert-all-progress"
+          {isConvertingAll ? (
+            <div className="flex items-center gap-2" data-testid="convert-all-progress">
+              <span className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm">
+                Convirtiendo {progress.current} / {progress.total}
+              </span>
+            </div>
+          ) : null}
+
+          <button
+            data-testid="convert-all-btn"
+            onClick={onConvertAll}
+            disabled={!hasFiles || isConvertingAll}
+            className={btnPrimary}
+            aria-busy={isConvertingAll}
+            aria-disabled={!hasFiles || isConvertingAll}
+            title={isConvertingAll ? "Convirtiendo todo..." : "Convertir todo"}
           >
-            <span className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">
-              Convirtiendo {convertProgress.current} / {convertProgress.total}
-            </span>
-          </div>
-        ) : null}
-
-        
-
-        <button
-          data-testid="convert-all-btn"
-          onClick={onConvertAll}
-          disabled={!hasFiles || isConvertingAll}
-          className={btnPrimary}
-        >
-          {isConvertingAll ? "Convirtiendo todo..." : "Convertir todo"}
-        </button>
+            {isConvertingAll ? "Convirtiendo todo..." : "Convertir todo"}
+          </button>
+        </div>
       </div>
-      </div>
-
-      
     </div>
   );
 }

@@ -1,8 +1,9 @@
+// app/components/ImageCard.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { ConvertedImage, fileToDataUrl } from "../lib/convert";
-import { FaArrowsRotate,FaArrowDownLong,FaTrashCan } from "react-icons/fa6";
+import { FaArrowsRotate, FaArrowDownLong, FaTrashCan } from "react-icons/fa6";
 import LoadingSpinner from "./LoadingSpinner";
 import "../globals.css";
 
@@ -12,13 +13,11 @@ type Props = {
   onConvert: () => Promise<void>;
   onRemove: () => void;
   globalConverting?: boolean;
+  // PROPS para estado elevado (controlado por el padre)
+  customName: string;
+  onCustomNameChange: (name: string) => void;
 };
 
-/**
- * 🔹 Sanitiza y normaliza nombres de archivo
- * @param name - valor ingresado por el usuario
- * @param originalName - nombre original del archivo para fallback
- */
 function sanitizeFilename(name: string, originalName: string): string {
   const baseName = name && name.trim() !== "" ? name : originalName;
   const withoutExt = baseName.replace(/\.[^.]+$/, "");
@@ -34,14 +33,11 @@ export default function ImageCard({
   onConvert,
   onRemove,
   globalConverting = false,
+  customName,
+  onCustomNameChange,
 }: Props) {
   const [preview, setPreview] = useState<string>("");
   const [isConverting, setIsConverting] = useState<boolean>(false);
-
-  // Estado para nombre editable, inicializado con el nombre base sin extensión
-  const [customName, setCustomName] = useState<string>(
-    file.name.replace(/\.[^.]+$/, "")
-  );
 
   useEffect(() => {
     let alive = true;
@@ -64,9 +60,6 @@ export default function ImageCard({
     }
   };
 
-  /**
-   * Devuelve el nombre de archivo final para la descarga
-   */
   const getDownloadFilename = (): string => {
     const fallbackBase = sanitizeFilename("", file.name.replace(/\.[^.]+$/, ""));
     const safeCustom = customName
@@ -89,7 +82,7 @@ export default function ImageCard({
 
   return (
     <article
-      className="bg-white/5 rounded-lg p-5 hidden md:flex md:flex-col"
+      className="bg-white/5 rounded-lg p-5 flex flex-col"
       data-testid={`card-${file.name}`}
     >
       {/* Vista previa */}
@@ -115,10 +108,10 @@ export default function ImageCard({
         <input
           type="text"
           value={customName || file.name.replace(/\.[^.]+$/, "")}
-          onChange={(e) => setCustomName(e.target.value)}
+          onChange={(e) => onCustomNameChange(e.target.value)}
           onBlur={(e) => {
             const normalized = sanitizeFilename(e.target.value, file.name);
-            setCustomName(normalized.replace(/\.[^.]+$/, ""));
+            onCustomNameChange(normalized.replace(/\.[^.]+$/, ""));
           }}
           placeholder={file.name.replace(/\.[^.]+$/, "")}
           className="w-full px-2 py-1 rounded-lg bg-black/30 border border-gray-600 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 "
@@ -131,7 +124,7 @@ export default function ImageCard({
       </div>
 
       {/* Acciones */}
-      <div className= "mt-3 flex items-center justify-center" role="group">
+      <div className="mt-3 flex items-center justify-center" role="group">
         <button
           data-testid={`convert-btn-${file.name}`}
           className={btnPrimary}
@@ -151,11 +144,11 @@ export default function ImageCard({
             </>
           ) : (
             <span>
-              <FaArrowsRotate className={iconBlur} /> 
+              <FaArrowsRotate className={iconBlur} />
             </span>
           )}
         </button>
-        {/* botón de descarga, solo si hay conversión */}
+
         {converted && (
           <a
             data-testid={`download-btn-${file.name}`}
@@ -164,11 +157,11 @@ export default function ImageCard({
             className={btnSuccess}
             title="Descargar imagen convertida"
           >
-            <FaArrowDownLong className={iconBlur} /> 
+            <FaArrowDownLong className={iconBlur} />
             {converted.filename.split(".").pop()?.toUpperCase()}
           </a>
         )}
-           {/* botón de eliminar */}
+
         <button
           data-testid={`remove-btn-${file.name}`}
           className={btnDanger}
@@ -176,8 +169,7 @@ export default function ImageCard({
           disabled={isConverting}
           title="Eliminar imagen"
         >
-         <FaTrashCan className={iconBlur} /> 
-          
+          <FaTrashCan className={iconBlur} />
         </button>
       </div>
     </article>

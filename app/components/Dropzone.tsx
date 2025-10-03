@@ -7,16 +7,15 @@ import ImageCard from "./ImageCard";
 import type { ConvertedImage } from "../lib/convert";
 
 type Props = {
-  // Callback cuando se agregan archivos (mantiene single source of truth en la page)
   onFilesAdded: (files: File[]) => void;
-  // Lista actual de archivos (proporcionada por la page) — opcional, pero necesaria para mostrar previews
   files?: File[];
-  // Lista de conversiones para indicar estado en ImageCard (opcional)
   converted?: ConvertedImage[];
-  // handlers para acciones sobre cada card (optional — se pasan desde la page)
   onConvert?: (file: File) => Promise<void> | void;
   onRemove?: (file: File) => void;
   globalConverting?: boolean;
+  // NUEVAS props que el padre debe pasar para controlar nombres
+  names?: Record<string, string>;
+  onCustomNameChange?: (file: File, name: string) => void;
 };
 
 export default function Dropzone({
@@ -26,20 +25,16 @@ export default function Dropzone({
   onConvert,
   onRemove,
   globalConverting = false,
+  names = {},
+  onCustomNameChange,
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  /**
-   * Extrae Files desde DataTransferItemList o FileList (sin usar `any`).
-   * - Si es FileList -> Array.from
-   * - Si es DataTransferItemList -> usar getAsFile()
-   */
   const extractFiles = useCallback(
     (items: DataTransferItemList | FileList | null): File[] => {
       if (!items) return [];
 
-      // Si es FileList (p. ej. input.files), devolver array directo
       if ((items as FileList) instanceof FileList) {
         return Array.from(items as FileList);
       }
@@ -51,14 +46,12 @@ export default function Dropzone({
         const it = dtItems[i];
         if (!it) continue;
 
-        // DataTransferItem tiene getAsFile()
         if (typeof (it as DataTransferItem).getAsFile === "function") {
           const f = (it as DataTransferItem).getAsFile();
           if (f) results.push(f);
           continue;
         }
 
-        // Fallback: si por alguna razón el índice devuelve directamente un File
         if ((it as unknown) instanceof File) {
           results.push(it as unknown as File);
         }
@@ -99,32 +92,29 @@ export default function Dropzone({
       const fl = e.target.files;
       const newFiles = extractFiles(fl);
       if (newFiles.length) onFilesAdded(newFiles);
-      // reset input so same file can be added again if needed
       if (inputRef.current) inputRef.current.value = "";
     },
     [onFilesAdded, extractFiles]
   );
 
   const openFilePicker = useCallback(() => {
-    // inputRef siempre existe (está en el DOM aunque oculto visualmente)
     inputRef.current?.click();
   }, []);
 
   const buttonBase =
     "px-3 py-2 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
   const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
-  
+
+  const getKey = (file: File) => `${file.name}-${file.size}`;
 
   return (
     <div>
-      {/* Drop area */}
       <div
         className={`w-full min-h-screen rounded-lg border-2 p-6 transition-colors ${
           isDragging
             ? "border-dashed border-blue-400 bg-white/5"
             : "border-dashed border-white/10 bg-transparent"
         }`}
-        // solo abrir el picker si el click fue directamente sobre la zona (no sobre hijos)
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             openFilePicker();
@@ -144,10 +134,6 @@ export default function Dropzone({
         aria-label="Area para arrastrar o seleccionar imágenes"
         data-testid="dropzone-root"
       >
-        {/* INPUT: siempre presente en el DOM pero oculto visualmente con sr-only
-            -> evita que el navegador muestre el texto nativo "Elegir archivos / Sin archivo seleccionado"
-            -> mantiene inputRef disponible para openFilePicker()
-        */}
         <input
           ref={inputRef}
           type="file"
@@ -158,17 +144,12 @@ export default function Dropzone({
           data-testid="dropzone-input"
         />
 
-        {/* Controles visibles:
-            - Si no hay archivos: CTA visual (div role=button) que abre el picker (sin mostrar el input nativo)
-            - Si hay archivos: botón para "Seleccionar más archivos"
-        */}
         {files.length === 0 ? (
           <div className="mb-4">
             <div
               role="button"
               tabIndex={0}
               onClick={(e) => {
-                // evitar abrir si se hace click sobre un hijo interactivo
                 if (e.target === e.currentTarget) openFilePicker();
               }}
               onKeyDown={(e) => {
@@ -185,14 +166,9 @@ export default function Dropzone({
                   Haz click o presiona Enter para seleccionar (PNG/JPG/WEBP)
                 </p>
               </div>
-
-              {/* <div className="px-3 py-2 rounded bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-sm">
-                Seleccionar
-              </div> */}
             </div>
           </div>
         ) : (
-          // boton cargar mas imagenes
           <div className="mb-4 flex justify-end">
             <button
               type="button"
@@ -206,7 +182,6 @@ export default function Dropzone({
           </div>
         )}
 
-        {/* Si hay archivos, mostramos las ImageCard dentro del dropzone */}
         {files && files.length > 0 ? (
           <div className="mt-4">
             <h3 className="text-xs mb-2">
@@ -217,22 +192,29 @@ export default function Dropzone({
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {files.map((file) => (
-                <ImageCard
-                  key={file.name + file.size}
-                  file={file}
-                  converted={converted.find(
-                    (c) =>
-                      c.srcFile.name + c.srcFile.size === file.name + file.size
-                  )}
-                  onConvert={() =>
-                    Promise.resolve(onConvert ? onConvert(file) : undefined)
-                  }
-                  onRemove={() => onRemove && onRemove(file)}
-                  globalConverting={globalConverting}
-                  data-testid={`dropzone-image-card-${file.name}`}
-                />
-              ))}
+              {files.map((file) => {
+                const key = getKey(file);
+                return (
+                  <ImageCard
+                    key={key}
+                    file={file}
+                    converted={converted.find(
+                      (c) => `${c.srcFile.name}-${c.srcFile.size}` === key
+                    )}
+                    onConvert={() =>
+                      Promise.resolve(onConvert ? onConvert(file) : undefined)
+                    }
+                    onRemove={() => onRemove && onRemove(file)}
+                    globalConverting={globalConverting}
+                    // REENVIAR props del padre para el nombre controlado
+                    customName={names[key] ?? file.name.replace(/\.[^.]+$/, "")}
+                    onCustomNameChange={(n) =>
+                      onCustomNameChange && onCustomNameChange(file, n)
+                    }
+                    data-testid={`dropzone-image-card-${file.name}`}
+                  />
+                );
+              })}
             </div>
           </div>
         ) : null}
