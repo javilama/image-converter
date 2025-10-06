@@ -1,33 +1,28 @@
 // app/components/BulkAction.tsx
 "use client";
 
-import React from "react";
-import { ConvertedImage } from "../lib/convert";
-import { zipFiles } from "../lib/zip";
-import "../globals.css";
-import { RenameParams } from '../types/RenameParams';
+import { useImageStore, getKey, sanitizeFilenameForDownload } from "../store/useImageStore";
 import RenameAllButton from "./RenameAllButton";
+import { zipFiles } from "../lib/zip";
+import { RenameParams } from '../types/RenameParams';
+import "../globals.css";
 
 
 
 type Props = {
-  converted: ConvertedImage[];
-  setConverted: React.Dispatch<React.SetStateAction<ConvertedImage[]>>;
-  clearAllFiles: () => void;
+  
   vertical?: boolean;
   hasFiles?: boolean;
   // NUEVO: callback que recibe los params del modal
   onRenameAllParams?: (params: RenameParams) => void;
 };
 
-export default function BulkActions({
-  converted,
-  setConverted,
-  clearAllFiles,
-  vertical = false,
-  hasFiles = false,
-  onRenameAllParams,
-}: Props) {
+export default function BulkActions({vertical = false,hasFiles = false,
+onRenameAllParams,
+}: Props){
+
+
+  const { converted, setConverted, clearAllFiles } = useImageStore();
   const handleDownloadAll = async () => {
     if (!converted.length) return;
     try {
