@@ -6,6 +6,8 @@ import { FaArrowUpFromBracket } from "react-icons/fa6";
 import ImageCard from "./ImageCard";
 import type { ConvertedImage } from "../lib/convert";
 
+// --- Definición de Props ---
+
 type Props = {
   onFilesAdded: (files: File[]) => void;
   files?: File[];
@@ -13,23 +15,29 @@ type Props = {
   onConvert?: (file: File) => Promise<void> | void;
   onRemove?: (file: File) => void;
   globalConverting?: boolean;
-  // NUEVAS props que el padre debe pasar para controlar nombres
   names?: Record<string, string>;
   onCustomNameChange?: (file: File, name: string) => void;
 };
 
+// --- Componente Principal ---
 export default function Dropzone({
   onFilesAdded,
   files = [],
-  converted = [],
   onConvert,
   onRemove,
   globalConverting = false,
-  names = {},
-  onCustomNameChange,
+
 }: Props) {
+
+  // ---estado interno---
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Genera una clave única para cada archivo basado en nombre y tamaño
+  const getKey = (file: File) => `${file.name}-${file.size}`;
+
+  // --- Funciones Auxiliares ---
+  // Extrae archivos de DataTransferItemList o FileList
 
   const extractFiles = useCallback(
     (items: DataTransferItemList | FileList | null): File[] => {
@@ -61,7 +69,8 @@ export default function Dropzone({
     },
     []
   );
-
+// --- Manejadores de eventos ---
+// Manejador del evento drop
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -75,18 +84,18 @@ export default function Dropzone({
     },
     [onFilesAdded, extractFiles]
   );
-
+// Manejador del evento dragover
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
     setIsDragging(true);
   }, []);
-
+// Manejador del evento dragleave
   const onDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
   }, []);
-
+// Manejador del cambio en el input file
   const onInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const fl = e.target.files;
@@ -96,16 +105,17 @@ export default function Dropzone({
     },
     [onFilesAdded, extractFiles]
   );
-
+// Abre el selector de archivos
   const openFilePicker = useCallback(() => {
     inputRef.current?.click();
   }, []);
 
+  // --- Estilos ---
   const buttonBase =
     "px-3 py-2 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
   const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
 
-  const getKey = (file: File) => `${file.name}-${file.size}`;
+  
 
   return (
     <div>
@@ -198,19 +208,11 @@ export default function Dropzone({
                   <ImageCard
                     key={key}
                     file={file}
-                    converted={converted.find(
-                      (c) => `${c.srcFile.name}-${c.srcFile.size}` === key
-                    )}
                     onConvert={() =>
                       Promise.resolve(onConvert ? onConvert(file) : undefined)
                     }
                     onRemove={() => onRemove && onRemove(file)}
                     globalConverting={globalConverting}
-                    // REENVIAR props del padre para el nombre controlado
-                    customName={names[key] ?? file.name.replace(/\.[^.]+$/, "")}
-                    onCustomNameChange={(n) =>
-                      onCustomNameChange && onCustomNameChange(file, n)
-                    }
                     data-testid={`dropzone-image-card-${file.name}`}
                   />
                 );

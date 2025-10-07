@@ -95,7 +95,7 @@ export async function convertFileTo(
 ): Promise<ConvertedImage> {
   // Validar tipo básico (acepta ahora png, jpeg/jpg y webp)
   if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) {
-    throw new Error('Tipo de archivo no soportado. Solo PNG/JPEG/WEBP admitidos.');
+    throw new Error('Tipo de archivo no soportado. Solo PNG/JPEG/WEBP.');
   }
 
   // 1) leer a dataURL

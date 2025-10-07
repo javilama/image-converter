@@ -1,7 +1,7 @@
 // app/components/RenameModal.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect,useRef, useState } from "react";
 import { RenameParams } from '../types/RenameParams';
 
 
@@ -16,13 +16,35 @@ export default function RenameModal({ open, initial = {}, onClose, onApply }: Pr
   const [prefix, setPrefix] = useState(initial.prefix ?? "");
   const [name, setName] = useState(initial.name ?? "");
   const [keyType, setKeyType] = useState<RenameParams["keyType"]>(initial.keyType ?? "index");
+// ref para detectar cambios en open
+  const prevOpenRef = useRef<boolean>(false);
+// Resetea el estado interno cuando se abre el modal o cambian los valores iniciales
+  useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      setPrefix(initial.prefix ?? "");
+      setName(initial.name ?? "");
+      setKeyType(initial.keyType ?? "index");
+    }
+  }, [open, initial]);
 
-  if (!open) return null;
+  useEffect(() => {
+    
+   if (!open) return;
+   const onKeyEsc = (e: KeyboardEvent) => {
+     if (e.key === "Escape") {
+       onClose();
+     }
+
+  }
+    window.addEventListener("keydown", onKeyEsc);
+}, [open, onClose]);
+
+if (!open) return null;
 
   const buttonBase =
     "px-3 py-2 flex items-center justify-center backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed w-[20%] rounded-s-lg`;
-  const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed gap-2 rounded-e-lg`;
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed w-[20%] rounded-s-full`;
+  const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed gap-2 rounded-e-full`;
  
 
   return (
@@ -34,8 +56,12 @@ export default function RenameModal({ open, initial = {}, onClose, onApply }: Pr
         aria-hidden
       />
       {/* modal */}
-      <div className="relative bg-white/6 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-lg border border-white/10">
-        <h3 className="text-lg font-semibold mb-3">Renombrar por lote</h3>
+      <div className="relative bg-white/6 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-lg border border-white/10"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rename-modal-title">
+      
+        <h3 className="text-lg font-semibold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-500/60 to-pink-500/60">Renombrar por lote</h3>
 
         <label className="text-xs block mb-1">Prefijo (opcional)</label>
         <input
