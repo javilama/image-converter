@@ -1,11 +1,13 @@
 // app/store/useImageStore.ts
-import { create } from 'zustand';
-import { ConvertedImage } from '../lib/convert';
 
-// --- Utilidades (movidas desde Home) ---
+// --- Zustand Store para gestión de estado global ---
+import { create } from 'zustand';
+import { ConvertedImage } from '../lib/convert'; // Importa el tipo ConvertedImage
+
+// --- Utilidades  ---
 // **mover estas funciones fuera del store para mantenerlo limpio.
 export const getKey = (file: File) => `${file.name}-${file.size}`;
-
+// Sanitiza un nombre de archivo para descarga segura
 export function sanitizeFilenameForDownload(name: string, originalName: string): string {
   const baseName = name && name.trim() !== "" ? name : originalName;
   const withoutExt = baseName.replace(/\.[^.]+$/, "");
@@ -59,6 +61,7 @@ export const useImageStore = create<ImageStore>((set, get) => ({
   names: {},
 
   // --- Acciones (lógica de negocio) ---
+  
   addFiles: (newFiles) => {
     set((state) => {
       const existing = new Map(state.files.map((f) => [getKey(f), f]));
@@ -78,7 +81,7 @@ export const useImageStore = create<ImageStore>((set, get) => ({
       return { files: mergedFiles, names: nextNames };
     });
   },
-
+// Acción para eliminar un archivo específico
   removeFile: (file) => {
     const key = getKey(file);
     set((state) => ({
@@ -91,7 +94,7 @@ export const useImageStore = create<ImageStore>((set, get) => ({
       })(),
     }));
   },
-
+    // Acción para limpiar todos los archivos y conversiones
   clearAllFiles: () => {
     const { converted } = get();
     converted.forEach((c) => {
@@ -99,9 +102,9 @@ export const useImageStore = create<ImageStore>((set, get) => ({
     });
     set({ files: [], converted: [], names: {} });
   },
-
+// Acción para establecer el formato de destino
   setTargetFormat: (format) => set({ targetFormat: format }),
-
+// Acción para convertir un archivo individual
   convertFile: async (file) => {
     const { convertFileTo } = await import("../lib/convert");
     const { targetFormat, names } = get();
@@ -119,7 +122,7 @@ export const useImageStore = create<ImageStore>((set, get) => ({
       return { converted: [...filtered, adjusted] };
     });
   },
-
+// Acción para convertir todos los archivos
   convertAll: async () => {
     const { files, targetFormat, names } = get();
     if (!files.length) return;
@@ -158,12 +161,12 @@ export const useImageStore = create<ImageStore>((set, get) => ({
       setTimeout(() => set({ convertProgress: { current: 0, total: 0 } }), 400);
     }
   },
-
+// Acción para establecer un nombre personalizado para un archivo
   setCustomName: (file, name) => {
     const key = getKey(file);
     set((state) => ({ names: { ...state.names, [key]: name } }));
   },
-
+// Acción para renombrar todos los archivos según un patrón que selecciona el usuario
   renameAll: ({ prefix, name, keyType }) => {
     const { files, names, targetFormat } = get();
     const timestamp = Date.now();

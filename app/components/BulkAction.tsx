@@ -7,22 +7,23 @@ import { zipFiles } from "../lib/zip";
 import { RenameParams } from '../types/RenameParams';
 import "../globals.css";
 
-
+// --- Definición de Props ---
 
 type Props = {
   
   vertical?: boolean;
   hasFiles?: boolean;
-  // NUEVO: callback que recibe los params del modal
+  // callback que recibe los params del modal
   onRenameAllParams?: (params: RenameParams) => void;
 };
-
+// --- Componente Principal ---
 export default function BulkActions({vertical = false,hasFiles = false,
 onRenameAllParams,
 }: Props){
 
-
+// Estado elevado desde el store
   const { converted, setConverted, clearAllFiles } = useImageStore();
+  // Maneja la descarga de todas las imágenes convertidas en un archivo ZIP
   const handleDownloadAll = async () => {
     if (!converted.length) return;
     try {
@@ -44,25 +45,26 @@ onRenameAllParams,
       console.error("Error al generar ZIP:", err);
     }
   };
-
+// Maneja la limpieza de todas las conversiones
   const handleClearAll = () => {
     // Si no hay elementos convertidos, sale.
     if (!converted.length) return;
 
-    // revocar las URLs para liberar memoria.
+    // revoca las URLs para liberar memoria.
     converted.forEach((c) => {
       try {
         URL.revokeObjectURL(c.url);
       } catch (err) {
-        // registrar el error
+        // registra el error
         console.error("Error al revocar URL:", err);
       }
     });
 
-    // Vaciamos el estado de las conversiones.
+    // Vacia el estado de las conversiones.
     setConverted([]);
 };
 
+// Maneja la eliminación de todos los archivos y conversiones
   const handleRemoveAll = () => {
     console.log('handleRemoveAll called', { hasFiles, convertedLength: converted.length });
     if (!hasFiles && converted.length === 0) {
@@ -78,7 +80,7 @@ onRenameAllParams,
     clearAllFiles(); // Esto limpia archivos y conversiones
     setConverted([]); // Por redundancia, pero clearAllFiles debería limpiar ambos
   };
-
+// Clases condicionales para el contenedor y botones
   const containerClass = `flex ${vertical ? "flex-col items-stretch" : "flex-row items-center"} gap-4`;
   const buttonBase =
     "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
@@ -87,7 +89,7 @@ onRenameAllParams,
   const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
   
   
-
+// --- Renderizado ---
   return (
     <div className={containerClass} data-testid="bulk-actions-root" role="group" aria-label="Bulk actions">
       <button
@@ -121,9 +123,7 @@ onRenameAllParams,
       <button
         data-testid="remove-all-btn"
         onClick={handleRemoveAll}
-        /* disabled={!hasFiles && converted.length === 0} */
         className={`${btnDanger} `}
-        /* aria-disabled={!hasFiles && converted.length === 0} */
         title="Eliminar todos los archivos y conversiones"
       >
         Limpiar todo

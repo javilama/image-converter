@@ -7,9 +7,11 @@ import Toolbar from "../app/components/Toolbar";
 import BulkActions from "../app/components/BulkAction";
 import { useImageStore, getKey } from "./store/useImageStore";
 
+// --- Componente Principal entrada ---
 
 export default function Home() {
 
+  // Estado globalizado con Zustand
   const{
     files,
     converted,
@@ -19,7 +21,7 @@ export default function Home() {
     names,
     addFiles,
     removeFile,
-    clearAllFiles,
+    //clearAllFiles,
     setTargetFormat,
     convertFile,
     convertAll,
@@ -27,7 +29,7 @@ export default function Home() {
     renameAll
   } = useImageStore();
 
-
+// --- Renderizado ---
   return (
     <main className="container mx-auto pt-10 pb-10">
       <div className="flex flex-col justify-center items-start md:flex-row gap-6">
@@ -35,7 +37,7 @@ export default function Home() {
           <h1 className="text-3xl font-semibold mb-4 text-center md:text-left" data-testid="title">
             Convertidor de imágenes
           </h1>
-
+        { /*--- Dropzone y Lista de Imágenes ---*/}
           <Dropzone
             files={files}
             converted={converted}
@@ -46,7 +48,6 @@ export default function Home() {
             names={names}
             onCustomNameChange={setCustomName}
           />
-
           <section className="mt-6 hidden md:grid-cols-2 lg:grid-cols-3 gap-4">
             {files.map((file) => {
               const key = getKey(file);
@@ -54,12 +55,9 @@ export default function Home() {
                 <ImageCard
                   key={key}
                   file={file}
-                  converted={converted.find((c) =>getKey(c.srcFile) === key )}
                   onConvert={() => convertFile(file)}
                   onRemove={() => removeFile(file)}
                   globalConverting={isConvertingAll}
-                  customName={names[key] ?? file.name.replace(/\.[^.]+$/, "")}
-                  onCustomNameChange={(n) => setCustomName(file, n)}
                   data-testid={`image-card-${file.name}`}
                 />
               );

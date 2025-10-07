@@ -2,42 +2,45 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ConvertedImage, fileToDataUrl } from "../lib/convert";
+import { fileToDataUrl } from "../lib/convert";
 import { FaArrowsRotate, FaArrowDownLong, FaTrashCan } from "react-icons/fa6";
 import LoadingSpinner from "./LoadingSpinner";
 import "../globals.css";
+import { useImageStore, getKey, sanitizeFilenameForDownload } from '../store/useImageStore';
 
+
+/// --- Definición de Props ---
 type Props = {
   file: File;
-  converted?: ConvertedImage;
   onConvert: () => Promise<void>;
   onRemove: () => void;
   globalConverting?: boolean;
   // PROPS para estado elevado (controlado por el padre)
-  customName: string;
-  onCustomNameChange: (name: string) => void;
+  
 };
 
-function sanitizeFilename(name: string, originalName: string): string {
-  const baseName = name && name.trim() !== "" ? name : originalName;
-  const withoutExt = baseName.replace(/\.[^.]+$/, "");
-  const normalized = withoutExt.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
-  const cleaned = normalized.replace(/[^\w\s-]/g, "").trim();
-  const slug = cleaned.replace(/\s+/g, "-").toLowerCase();
-  return slug || originalName;
-}
 
+/// --- Componente Principal ---
 export default function ImageCard({
+  // FIRMA de la función
   file,
-  converted,
   onConvert,
   onRemove,
   globalConverting = false,
-  customName,
-  onCustomNameChange,
 }: Props) {
+
+  // Estado interno
   const [preview, setPreview] = useState<string>("");
   const [isConverting, setIsConverting] = useState<boolean>(false);
+
+  // ESTADO ELEVADO EN Store (controlado por el padre)
+  const key = getKey(file);
+  const customName = useImageStore(s => s.names[key] ?? file.name.replace(/\.[^.]+$/, ""));
+  const setCustomName = useImageStore(s => s.setCustomName);
+  const converted = useImageStore(s => s.converted.find(c => getKey(c.srcFile) === getKey(file)));
+  const targetFormat = useImageStore(s => s.targetFormat);
+
+  // Efecto para generar la vista previa al montar el componente
 
   useEffect(() => {
     let alive = true;
@@ -49,6 +52,7 @@ export default function ImageCard({
     };
   }, [file]);
 
+  // Manejador del clic de conversión
   const handleConvertClick = async () => {
     try {
       setIsConverting(true);
@@ -60,19 +64,17 @@ export default function ImageCard({
     }
   };
 
+  // Generar nombre de la descarga basado en nombre personalizado u original
   const getDownloadFilename = (): string => {
-    const fallbackBase = sanitizeFilename("", file.name.replace(/\.[^.]+$/, ""));
-    const safeCustom = customName
-      ? sanitizeFilename(customName, file.name).replace(/\.[^.]+$/, "")
-      : fallbackBase;
-    const safeName = safeCustom || fallbackBase;
+   const safeBase = sanitizeFilenameForDownload(customName || file.name.replace(/\.[^.]+$/, ""), file.name);
     const ext =
       converted?.filename.split(".").pop() ||
-      file.name.split(".").pop() ||
+      file.name.split(".").pop() || targetFormat ||
       "png";
-    return `${safeName}.${ext}`;
+    return `${safeBase}.${ext}`;
   };
 
+// --- Estilos ---
   const buttonBase =
     "px-3 py-2 flex items-center justify-center backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
   const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed w-[20%] rounded-s-lg`;
@@ -80,6 +82,8 @@ export default function ImageCard({
   const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30 w-[20%] rounded-e-lg`;
   const iconBlur = "hover:text-white/90 text-white/50 w-4 h-4";
 
+
+  // --- Renderizado ---
   return (
     <article
       className="bg-white/5 rounded-lg p-5 flex flex-col"
@@ -88,6 +92,7 @@ export default function ImageCard({
       {/* Vista previa */}
       <div className="h-48 flex items-center justify-center bg-black/20 rounded">
         {preview ? (
+          
           <img
             src={preview}
             alt={file.name}
@@ -95,6 +100,8 @@ export default function ImageCard({
             loading="lazy"
           />
         ) : (
+
+          // Si no hay preview, muestra un spinner de carga (componente: LoadingSpinner)
           <LoadingSpinner size="md" label="Cargando vista previa..." />
         )}
       </div>
@@ -108,10 +115,12 @@ export default function ImageCard({
         <input
           type="text"
           value={customName || file.name.replace(/\.[^.]+$/, "")}
-          onChange={(e) => onCustomNameChange(e.target.value)}
+          onChange={
+            (e)=> setCustomName(file, e.target.value)
+          }
           onBlur={(e) => {
-            const normalized = sanitizeFilename(e.target.value, file.name);
-            onCustomNameChange(normalized.replace(/\.[^.]+$/, ""));
+            const normalized = sanitizeFilenameForDownload(e.target.value, file.name).replace(/\.[^.]+$/, "");
+            setCustomName(file, normalized);
           }}
           placeholder={file.name.replace(/\.[^.]+$/, "")}
           className="w-full px-2 py-1 rounded-lg bg-black/30 border border-gray-600 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 "
