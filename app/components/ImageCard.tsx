@@ -84,9 +84,9 @@ export default function ImageCard({
       await convertFile(file);
 
       // NO limpiar conversionError aquí: lo gestiona el store en caso de error
-    } catch (err: any) {
+    } catch (err: unknown) {
       // seguridad: si convertFile relanza por alguna razón, almacenamos el mensaje
-      const message = err?.message ?? String(err);
+       const message = err instanceof Error ? err.message : String(err);
       console.error("Error en conversión (ImageCard):", message);
       setConversionError(message);
     } finally {

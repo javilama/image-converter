@@ -116,7 +116,7 @@ export const useImageStore = create<ImageStore>((set, get) => ({
   setConverted: (updater) =>
     set((state) => {
       if (typeof updater === "function") {
-        // @ts-ignore
+        
         return { converted: (updater as (prev: ConvertedImage[]) => ConvertedImage[])(state.converted) };
       }
       return { converted: updater as ConvertedImage[] };
@@ -139,9 +139,9 @@ export const useImageStore = create<ImageStore>((set, get) => ({
         const filtered = state.converted.filter((c) => getKey(c.srcFile) !== key);
         return { converted: [...filtered, adjusted], conversionError: null, alertFileKey: null };
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // capturamos el error y lo guardamos en el store en lugar de relanzar
-      const message = err?.message ?? String(err);
+       const message = err instanceof Error ? err.message : String(err);
       console.error("Error en convertFile:", message);
       set({ conversionError: message, alertFileKey: getKey(file) });
     }
@@ -162,9 +162,9 @@ export const useImageStore = create<ImageStore>((set, get) => ({
         let r: ConvertedImage;
         try {
           r = await convertFileTo(f, targetFormat, { quality: 0.9 });
-        } catch (err: any) {
+        } catch (err: unknown) {
           // guardar error en el store y limpiar estado parcial
-          const message = err?.message ?? String(err);
+           const message = err instanceof Error ? err.message : String(err);
           console.error("Error en Convertir todo:", message);
           set({ conversionError: message, isConvertingAll: false, convertProgress: { current: 0, total: 0 }, alertFileKey: getKey(f) });
 
@@ -192,10 +192,19 @@ export const useImageStore = create<ImageStore>((set, get) => ({
         );
         return { converted: [...filtered, ...results] };
       });
-    } catch (err) {
-      console.error("Error en Convertir todo (unexpected):", err);
-      set({ conversionError: (err as any)?.message ?? String(err) });
-    } finally {
+    } catch (err: unknown) {
+    console.error("Error en Convertir todo (unexpected):", err);
+    
+    // 1. Verificar si el error es un objeto de tipo Error nativo (o similar)
+    if (err instanceof Error) {
+        // Acceso seguro a la propiedad 'message'
+        set({ conversionError: err.message });
+    } else {
+        // 2. Si es diferente (string, número, etc.), convertirlo a string.
+        set({ conversionError: String(err) });
+    }
+} 
+    finally {
       set({ isConvertingAll: false });
       setTimeout(() => set({ convertProgress: { current: 0, total: 0 } }), 400);
     }
