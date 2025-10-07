@@ -28,9 +28,9 @@ export default function Toolbar({
   const buttonBase =
     "px-3 py-1 rounded-full backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20 w-full ";
   const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
-
+// Progreso de conversión
   const progress = convertProgress ?? { current: 0, total: 0 };
-
+// Maneja el clic en "Convertir todo"
   const handleConvertAll = () => {
     const allowed = allowedFormats ?? ["webp", "png", "jpg"];
     const normalized = String(targetFormat).toLowerCase().trim();
@@ -40,12 +40,12 @@ export default function Toolbar({
     }
     onConvertAll();
   };
-
+// --- Renderizado ---
   return (
     <div className="flex items-center justify-between mb-4 gap-3 " data-testid="toolbar-root">
       <div className="flex flex-col gap-5 items-center w-full ">
         <label className="text-sm md:text-xl">Formato de salida:</label>
-
+          {/* Selector de formato*/}
         <CustomSelect
           targetFormat={targetFormat}
           onChangeFormat={onChangeFormat}
@@ -53,17 +53,18 @@ export default function Toolbar({
           className="w-full"
           data-testid="format-select"
         />
-
+          {/* Botón de convertir todo */}
         <div className="flex flex-col items-center gap-3 w-[100%]">
+          {/* renderizado condicional*/}
           {isConvertingAll ? (
             <div className="flex items-center gap-2" data-testid="convert-all-progress">
               <span className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">
+              <span className="text-sm md:text-base bg-clip-text text-transparent bg-gradient-to-r from-purple-500/70 to-pink-500/70 animate-pulse">
                 Convirtiendo {progress.current} / {progress.total}
               </span>
             </div>
           ) : null}
-
+          
           <button
             data-testid="convert-all-btn"
             onClick={handleConvertAll}
