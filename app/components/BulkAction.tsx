@@ -87,6 +87,7 @@ onRenameAllParams,
   const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;
   const btnWarning = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-500/30 disabled:cursor-not-allowed`;
   const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
+  const disabledClass = "opacity-50 cursor-not-allowed pointer-events-none";
   
   
 // --- Renderizado ---
@@ -96,19 +97,19 @@ onRenameAllParams,
         data-testid="download-all-btn"
         onClick={handleDownloadAll}
         disabled={converted.length === 0}
-        className={`${btnSuccess} `}
-        aria-disabled={converted.length === 0}
+        className={`${btnSuccess} ${converted.length === 0 ? disabledClass : ""}`}
+        aria-disabled={converted.length === 0 }
       >
         Descargar todo (zip)
       </button>
          
-        <RenameAllButton disabled={converted.length === 0 && !hasFiles}/>
+        <RenameAllButton disabled={!hasFiles}/>
      
       <button
         data-testid="clear-all-btn"
         onClick={handleClearAll}
         disabled={converted.length === 0}
-        className={`${btnWarning} `}
+        className={`${btnWarning} ${converted.length === 0 ? disabledClass : ""}`}
         aria-disabled={converted.length === 0}
       >
         Limpiar conversiones
@@ -117,7 +118,7 @@ onRenameAllParams,
       <button
         data-testid="remove-all-btn"
         onClick={handleRemoveAll}
-        className={`${btnDanger} `}
+        className={`${btnDanger} ${!hasFiles? disabledClass : ""}`}
         title="Eliminar todos los archivos y conversiones"
       >
         Limpiar todo
