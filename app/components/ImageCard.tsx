@@ -1,13 +1,12 @@
 // app/components/ImageCard.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fileToDataUrl } from "../lib/convert";
-import { FaArrowsRotate, FaArrowDownLong, FaTrashCan } from "react-icons/fa6";
+import { FaArrowsRotate, FaTrashCan, FaDownload } from "react-icons/fa6";
 import LoadingSpinner from "./LoadingSpinner";
 import "../globals.css";
 import { useImageStore, getKey, sanitizeFilenameForDownload } from '../store/useImageStore';
-
 
 /// --- Definición de Props ---
 type Props = {
@@ -18,7 +17,6 @@ type Props = {
   // PROPS para estado elevado (controlado por el padre)
   
 };
-
 
 /// --- Componente Principal ---
 export default function ImageCard({
@@ -40,8 +38,20 @@ export default function ImageCard({
   const converted = useImageStore(s => s.converted.find(c => getKey(c.srcFile) === getKey(file)));
   const targetFormat = useImageStore(s => s.targetFormat);
 
-  // Efecto para generar la vista previa al montar el componente
+  // Nuevo: leer alertFileKey del store para saber si esta tarjeta debe resaltarse
+  const alertFileKey = useImageStore(s => s.alertFileKey);
 
+  // ACCIONES DEL STORE para conversión y manejo de errores
+  const convertFile = useImageStore(s => s.convertFile);
+  const setConversionError = useImageStore(s => s.setConversionError);
+
+  // ref para la tarjeta — lo usamos para scrollIntoView cuando se resalte
+  const cardRef = useRef<HTMLElement | null>(null);
+
+  // Determina si esta tarjeta es la que debe resaltarse
+  const isHighlighted = alertFileKey !== null && alertFileKey === key;
+
+  // Efecto para generar la vista previa al montar el componente
   useEffect(() => {
     let alive = true;
     fileToDataUrl(file).then((url) => {
@@ -52,13 +62,33 @@ export default function ImageCard({
     };
   }, [file]);
 
+  // Si la tarjeta se resalta, hacer scroll y focus suave para visibilidad
+  useEffect(() => {
+    if (isHighlighted && cardRef.current) {
+      try {
+        cardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        // añadir foco para accesibilidad (no cambiar tabindex original si existe)
+        (cardRef.current as HTMLElement).focus?.();
+      } catch {}
+    }
+  }, [isHighlighted]);
+
   // Manejador del clic de conversión
   const handleConvertClick = async () => {
     try {
       setIsConverting(true);
-      await onConvert();
-    } catch (err) {
-      console.error("Error en conversión:", err);
+      // limpia error previo antes de intentar
+      setConversionError(null);
+
+      // usar la acción del store; el store pondrá conversionError + alertFileKey si falla
+      await convertFile(file);
+
+      // NO limpiar conversionError aquí: lo gestiona el store en caso de error
+    } catch (err: any) {
+      // seguridad: si convertFile relanza por alguna razón, almacenamos el mensaje
+      const message = err?.message ?? String(err);
+      console.error("Error en conversión (ImageCard):", message);
+      setConversionError(message);
     } finally {
       setIsConverting(false);
     }
@@ -74,7 +104,7 @@ export default function ImageCard({
     return `${safeBase}.${ext}`;
   };
 
-// --- Estilos ---
+  // --- Estilos ---
   const buttonBase =
     "px-3 py-2 flex items-center justify-center backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-xs durattion-200 shadow-md border border-white/20";
   const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed w-[20%] rounded-s-lg`;
@@ -82,11 +112,17 @@ export default function ImageCard({
   const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30 w-[20%] rounded-e-lg`;
   const iconBlur = "hover:text-white/90 text-white/50 w-4 h-4";
 
+  // Clase condicional para resaltado (no se tocan estilos base)
+  const highlightClass = isHighlighted
+    ? "ring-2 ring-2 ring-purple-500 bg-gradient-to-r from-purple-500/50 to-pink-500/50 animate-pulse animate-pulse"
+    : "";
 
   // --- Renderizado ---
   return (
     <article
-      className="bg-white/5 rounded-lg p-5 flex flex-col"
+      ref={cardRef}
+      tabIndex={-1}
+      className={`bg-white/5 rounded-lg p-5 flex flex-col transition-all duration-300 ${highlightClass}`}
       data-testid={`card-${file.name}`}
     >
       {/* Vista previa */}
@@ -109,7 +145,7 @@ export default function ImageCard({
       {/* Información + campo de nombre */}
       <div className="mt-3 flex-1">
         <p className="text-sm text-gray-300 mb-2">
-          {Math.round(file.size / 1024)} KB
+          {Math.round(file.size / 1024)} KB - {file.name.split('.').pop()?.toUpperCase()}
         </p>
 
         <input
@@ -166,7 +202,7 @@ export default function ImageCard({
             className={btnSuccess}
             title="Descargar imagen convertida"
           >
-            <FaArrowDownLong className={iconBlur} />
+            <FaDownload className={iconBlur} />
             {converted.filename.split(".").pop()?.toUpperCase()}
           </a>
         )}
@@ -184,3 +220,4 @@ export default function ImageCard({
     </article>
   );
 }
+// --- FIN DEL COMPONENTE ---

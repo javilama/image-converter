@@ -102,13 +102,7 @@ onRenameAllParams,
         Descargar todo (zip)
       </button>
          
-        <RenameAllButton
-          disabled={converted.length === 0 && !hasFiles}
-          onApply={(params) => {
-            // Llamada segura: si el padre no pasó la función, no hace nada.
-            onRenameAllParams?.(params);
-          }}
-        />
+        <RenameAllButton disabled={converted.length === 0 && !hasFiles}/>
      
       <button
         data-testid="clear-all-btn"

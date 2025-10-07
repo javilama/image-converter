@@ -1,13 +1,11 @@
 // app/store/useImageStore.ts
-
-// --- Zustand Store para gestión de estado global ---
 import { create } from 'zustand';
-import { ConvertedImage } from '../lib/convert'; // Importa el tipo ConvertedImage
+import { ConvertedImage } from '../lib/convert';
 
-// --- Utilidades  ---
-// **mover estas funciones fuera del store para mantenerlo limpio.
+// --- Utilidades (movidas desde Home) ---
+// mover estas funciones fuera del store para mantenerlo limpio.
 export const getKey = (file: File) => `${file.name}-${file.size}`;
-// Sanitiza un nombre de archivo para descarga segura
+
 export function sanitizeFilenameForDownload(name: string, originalName: string): string {
   const baseName = name && name.trim() !== "" ? name : originalName;
   const withoutExt = baseName.replace(/\.[^.]+$/, "");
@@ -25,6 +23,10 @@ interface ImageState {
   isConvertingAll: boolean;
   convertProgress: { current: number; total: number };
   names: Record<string, string>;
+  // nuevo: mensaje de error de conversión
+  conversionError: string | null;
+  // nuevo: clave del archivo que causó la alerta/error (para resaltar ImageCard)
+  alertFileKey: string | null;
 }
 
 interface ImageActions {
@@ -37,15 +39,19 @@ interface ImageActions {
   setTargetFormat: (format: "webp" | "png" | "jpg") => void;
   convertFile: (file: File) => Promise<void>;
   convertAll: () => Promise<void>;
+
+  // Acciones de errores
+  setConversionError: (msg: string | null) => void;
+  // nueva acción para setear/limpiar la clave del archivo que provocó la alerta
+  setAlertFileKey: (key: string | null) => void;
   
   // Acciones de renombrado
   setCustomName: (file: File, name: string) => void;
   renameAll: (params: { prefix: string; name: string; keyType: "index" | "original" | "counter"; }) => void;
 
-  // accion de limpiar conversiones en bulkAction
-setConverted: (updater: ((prev: ConvertedImage[]) => ConvertedImage[]) | ConvertedImage[]) => void;
- 
-
+  // utilidad para actualizar converted desde UI si hace falta
+  setConverted: (updater: ((prev: ConvertedImage[]) => ConvertedImage[]) | ConvertedImage[]) => void;
+  
 }
 
 type ImageStore = ImageState & ImageActions;
@@ -59,9 +65,10 @@ export const useImageStore = create<ImageStore>((set, get) => ({
   isConvertingAll: false,
   convertProgress: { current: 0, total: 0 },
   names: {},
+  conversionError: null,
+  alertFileKey: null,
 
   // --- Acciones (lógica de negocio) ---
-  
   addFiles: (newFiles) => {
     set((state) => {
       const existing = new Map(state.files.map((f) => [getKey(f), f]));
@@ -81,7 +88,7 @@ export const useImageStore = create<ImageStore>((set, get) => ({
       return { files: mergedFiles, names: nextNames };
     });
   },
-// Acción para eliminar un archivo específico
+
   removeFile: (file) => {
     const key = getKey(file);
     set((state) => ({
@@ -94,40 +101,57 @@ export const useImageStore = create<ImageStore>((set, get) => ({
       })(),
     }));
   },
-    // Acción para limpiar todos los archivos y conversiones
+
   clearAllFiles: () => {
     const { converted } = get();
     converted.forEach((c) => {
       try { URL.revokeObjectURL(c.url); } catch {}
     });
-    set({ files: [], converted: [], names: {} });
+    set({ files: [], converted: [], names: {}, conversionError: null, alertFileKey: null });
   },
-// Acción para establecer el formato de destino
+
   setTargetFormat: (format) => set({ targetFormat: format }),
-// Acción para convertir un archivo individual
+
+  // nueva acción para actualizar converted desde UI o componentes
+  setConverted: (updater) =>
+    set((state) => {
+      if (typeof updater === "function") {
+        // @ts-ignore
+        return { converted: (updater as (prev: ConvertedImage[]) => ConvertedImage[])(state.converted) };
+      }
+      return { converted: updater as ConvertedImage[] };
+    }),
+
   convertFile: async (file) => {
     const { convertFileTo } = await import("../lib/convert");
-    const { targetFormat, names } = get();
-    const result: ConvertedImage = await convertFileTo(file, targetFormat, { quality: 0.9 });
+    try {
+      const { targetFormat, names } = get();
+      const result: ConvertedImage = await convertFileTo(file, targetFormat, { quality: 0.9 });
 
-    const key = getKey(file);
-    const controlledBase = names[key] ?? file.name.replace(/\.[^.]+$/, "");
-    const ext = result.filename?.split(".").pop() || targetFormat || file.name.split(".").pop() || "png";
-    const safeBase = sanitizeFilenameForDownload(controlledBase, file.name);
-    const newFilename = `${safeBase}.${ext}`;
-    const adjusted: ConvertedImage = { ...result, filename: newFilename };
+      const key = getKey(file);
+      const controlledBase = names[key] ?? file.name.replace(/\.[^.]+$/, "");
+      const ext = result.filename?.split(".").pop() || targetFormat || file.name.split(".").pop() || "png";
+      const safeBase = sanitizeFilenameForDownload(controlledBase, file.name);
+      const newFilename = `${safeBase}.${ext}`;
+      const adjusted: ConvertedImage = { ...result, filename: newFilename };
 
-    set((state) => {
-      const filtered = state.converted.filter((c) => getKey(c.srcFile) !== key);
-      return { converted: [...filtered, adjusted] };
-    });
+      set((state) => {
+        const filtered = state.converted.filter((c) => getKey(c.srcFile) !== key);
+        return { converted: [...filtered, adjusted], conversionError: null, alertFileKey: null };
+      });
+    } catch (err: any) {
+      // capturamos el error y lo guardamos en el store en lugar de relanzar
+      const message = err?.message ?? String(err);
+      console.error("Error en convertFile:", message);
+      set({ conversionError: message, alertFileKey: getKey(file) });
+    }
   },
-// Acción para convertir todos los archivos
+
   convertAll: async () => {
     const { files, targetFormat, names } = get();
     if (!files.length) return;
     
-    set({ isConvertingAll: true, convertProgress: { current: 0, total: files.length } });
+    set({ isConvertingAll: true, convertProgress: { current: 0, total: files.length }, conversionError: null, alertFileKey: null });
 
     try {
       const { convertFileTo } = await import("../lib/convert");
@@ -135,7 +159,21 @@ export const useImageStore = create<ImageStore>((set, get) => ({
 
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
-        const r: ConvertedImage = await convertFileTo(f, targetFormat, { quality: 0.9 });
+        let r: ConvertedImage;
+        try {
+          r = await convertFileTo(f, targetFormat, { quality: 0.9 });
+        } catch (err: any) {
+          // guardar error en el store y limpiar estado parcial
+          const message = err?.message ?? String(err);
+          console.error("Error en Convertir todo:", message);
+          set({ conversionError: message, isConvertingAll: false, convertProgress: { current: 0, total: 0 }, alertFileKey: getKey(f) });
+
+          // revocar urls parciales si existen
+          results.forEach((c) => {
+            try { URL.revokeObjectURL(c.url); } catch {}
+          });
+          return; // salimos sin lanzar error
+        }
 
         const key = getKey(f);
         const controlledBase = names[key] ?? f.name.replace(/\.[^.]+$/, "");
@@ -155,18 +193,19 @@ export const useImageStore = create<ImageStore>((set, get) => ({
         return { converted: [...filtered, ...results] };
       });
     } catch (err) {
-      console.error("Error en Convertir todo:", err);
+      console.error("Error en Convertir todo (unexpected):", err);
+      set({ conversionError: (err as any)?.message ?? String(err) });
     } finally {
       set({ isConvertingAll: false });
       setTimeout(() => set({ convertProgress: { current: 0, total: 0 } }), 400);
     }
   },
-// Acción para establecer un nombre personalizado para un archivo
+
   setCustomName: (file, name) => {
     const key = getKey(file);
     set((state) => ({ names: { ...state.names, [key]: name } }));
   },
-// Acción para renombrar todos los archivos según un patrón que selecciona el usuario
+
   renameAll: ({ prefix, name, keyType }) => {
     const { files, names, targetFormat } = get();
     const timestamp = Date.now();
@@ -196,15 +235,10 @@ export const useImageStore = create<ImageStore>((set, get) => ({
 
     set({ names: nextNames, converted: nextConverted });
   },
-  // acción para ajustar el array 'converted' desde componentes
-  setConverted: (updater) =>
-    set((state) => {
-      if (typeof updater === "function") {
-        // @ts-ignore -- tipar correctamente si haces overload
-        return { converted: (updater as (prev: ConvertedImage[]) => ConvertedImage[])(state.converted) };
-      }
-      return { converted: updater as ConvertedImage[] };
-    }),
 
-
+  // nueva acción para guardar/limpiar mensaje de error
+  setConversionError: (msg) => set({ conversionError: msg }),
+  // nueva acción para setear/limpiar la clave del archivo que causó el alerta
+  setAlertFileKey: (key) => set({ alertFileKey: key }),
 }));
+// --- FIN DEL STORE ---

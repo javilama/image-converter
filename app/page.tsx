@@ -1,14 +1,14 @@
+// app/page.tsx
 "use client";
-
-import React, { useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Dropzone from "../app/components/Dropzone";
 import ImageCard from "../app/components/ImageCard";
 import Toolbar from "../app/components/Toolbar";
 import BulkActions from "../app/components/BulkAction";
+import AlertModal from "./components/AlertModal";
 import { useImageStore, getKey } from "./store/useImageStore";
 
 // --- Componente Principal entrada ---
-
 export default function Home() {
 
   // Estado globalizado con Zustand
@@ -26,10 +26,35 @@ export default function Home() {
     convertFile,
     convertAll,
     setCustomName,
-    renameAll
+    renameAll,
+    conversionError,
+    setConversionError
   } = useImageStore();
 
-// --- Renderizado ---
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMsg, setAlertMsg] = useState("");
+
+  const handleConvertAll = async () => {
+    // Llamamos a la acción del store; el store se encargará de setear conversionError si ocurre.
+    await convertAll();
+  };
+
+  // Cuando conversionError cambie en el store abrimos el modal en Home
+  useEffect(() => {
+    if (conversionError) {
+      setAlertMsg(conversionError);
+      setAlertOpen(true);
+    }
+  }, [conversionError]);
+
+  // Cuando el usuario cierra el modal limpiamos el error en el store y el estado local
+  const handleCloseAlert = () => {
+    setConversionError(null);
+    setAlertOpen(false);
+    setAlertMsg("");
+  };
+
+  // --- Renderizado ---
   return (
     <main className="container mx-auto pt-10 pb-10">
       <div className="flex flex-col justify-center items-start md:flex-row gap-6">
@@ -70,7 +95,7 @@ export default function Home() {
             <Toolbar
               targetFormat={targetFormat}
               onChangeFormat={setTargetFormat}
-              onConvertAll={convertAll}
+              onConvertAll={handleConvertAll}
               hasFiles={files.length > 0}
               isConvertingAll={isConvertingAll}
               convertProgress={convertProgress}
@@ -88,6 +113,11 @@ export default function Home() {
           </div>
         </aside>
       </div>
+      <AlertModal
+        open={alertOpen}
+        message={alertMsg}
+        onClose={handleCloseAlert}
+      />
     </main>
   );
 }
