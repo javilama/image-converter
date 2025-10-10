@@ -26,8 +26,8 @@ export default function Toolbar({
 
   // --- Estilos ---
   const buttonBase =
-    "px-3 py-1 rounded-full backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20 w-full ";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
+    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20 w-full ";
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-yellow-500/30 to-orange-500/30 disabled:cursor-not-allowed`;
   const disabledClass = "opacity-50 cursor-not-allowed pointer-events-none";
 
 // Progreso de conversión
@@ -61,7 +61,7 @@ export default function Toolbar({
           {isConvertingAll ? (
             <div className="flex items-center gap-2" data-testid="convert-all-progress">
               <span className="inline-block w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm md:text-base bg-clip-text text-transparent bg-gradient-to-r from-purple-500/70 to-pink-500/70 animate-pulse">
+              <span className="text-sm md:text-base bg-clip-text text-transparent bg-gradient-to-r from-yellow-500/70 to-orange-500/70 animate-pulse">
                 Convirtiendo {progress.current} / {progress.total}
               </span>
             </div>
