@@ -15,8 +15,8 @@ export default function RenameAllButton({ disabled = false, compact = false }: P
 
   const renameAll = useImageStore(s => s.renameAll);
 
-  const buttonBase = "px-3 py-1 rounded-full backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
-  const btnInfo = `${buttonBase} bg-gradient-to-r from-blue-400/30 to-indigo-500/30`;
+  const buttonBase = "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
+  const btnInfo = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-500/30`;
 
   // Clases visuales cuando está deshabilitado (opcional, puedes cambiarlas)
   const disabledClass = "opacity-50 cursor-not-allowed pointer-events-none";

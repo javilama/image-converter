@@ -113,7 +113,7 @@ export default function Dropzone({
   // --- Estilos ---
   const buttonBase =
     "px-3 py-2 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
-  const btnPrimary = `${buttonBase} bg-gradient-to-r from-purple-500/30 to-pink-500/30 disabled:cursor-not-allowed`;
+  const btnPrimary = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-400/30 disabled:cursor-not-allowed hover:from-yellow-500/30 hover:to-orange-500/30`;
 
   
 
@@ -122,7 +122,7 @@ export default function Dropzone({
       <div
         className={`w-full min-h-screen rounded-lg border-2 p-6 transition-colors ${
           isDragging
-            ? "border-dashed border-blue-400 bg-white/5"
+            ? "border-dashed border-teal-200/30 bg-white/5"
             : "border-dashed border-white/10 bg-transparent"
         }`}
         onClick={(e) => {

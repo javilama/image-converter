@@ -1,7 +1,7 @@
 // app/components/BulkAction.tsx
 "use client";
 
-import { useImageStore, getKey, sanitizeFilenameForDownload } from "../store/useImageStore";
+import { useImageStore} from "../store/useImageStore";
 import RenameAllButton from "./RenameAllButton";
 import { zipFiles } from "../lib/zip";
 import { RenameParams } from '../types/RenameParams';
@@ -83,16 +83,18 @@ onRenameAllParams,
 // Clases condicionales para el contenedor y botones
   const containerClass = `flex ${vertical ? "flex-col items-stretch" : "flex-row items-center"} gap-4`;
   const buttonBase =
-    "px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
+    " px-3 py-1 rounded-lg backdrop-blur-md cursor-pointer scale-100 hover:scale-105 transition-all text-[12px] md:text-base durattion-200 shadow-md border border-white/20";
   const btnSuccess = `${buttonBase} bg-gradient-to-r from-green-400/30 to-emerald-500/30 disabled:cursor-not-allowed`;
-  const btnWarning = `${buttonBase} bg-gradient-to-r from-yellow-400/30 to-orange-500/30 disabled:cursor-not-allowed`;
-  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-600/30`;
+  const btnWarning = `${buttonBase} bg-gradient-to-r from-gray-900/30 to-gray-400/30 disabled:cursor-not-allowed`;
+  const btnDanger = `${buttonBase} bg-gradient-to-r from-red-500/30 to-rose-500/30 hover:from-red-500/50 hover:to-rose-500/50`;
   const disabledClass = "opacity-50 cursor-not-allowed pointer-events-none";
+ 
   
   
 // --- Renderizado ---
   return (
     <div className={containerClass} data-testid="bulk-actions-root" role="group" aria-label="Bulk actions">
+      <RenameAllButton disabled={!hasFiles}/>
       <button
         data-testid="download-all-btn"
         onClick={handleDownloadAll}
@@ -102,8 +104,6 @@ onRenameAllParams,
       >
         Descargar todo (zip)
       </button>
-         
-        <RenameAllButton disabled={!hasFiles}/>
      
       <button
         data-testid="clear-all-btn"
@@ -121,7 +121,7 @@ onRenameAllParams,
         className={`${btnDanger} ${!hasFiles? disabledClass : ""}`}
         title="Eliminar todos los archivos y conversiones"
       >
-        Limpiar todo
+        Eliminar todo
       </button>
     </div>
   );

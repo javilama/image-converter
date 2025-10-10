@@ -10,8 +10,12 @@
   --electric:#1a2e88;
   --custom-purple: #7e5bef;
 
+  --background: #0a0a0a; 
+  --foreground: #ededed; 
+
 }
 
+/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   
   --color-king-blue: var(--king-blue);
@@ -19,12 +23,7 @@
   --color-custom-purple: var(--custom-purple);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+
 
 html,body {
  
